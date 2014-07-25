@@ -1,0 +1,341 @@
+unit UntImportCsv;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Data.DBXOdbc, Data.FMTBcd, Data.DB,
+  Vcl.Grids, Vcl.DBGrids, Data.SqlExpr, Datasnap.Provider, Datasnap.DBClient,
+  Vcl.StdCtrls;
+
+type
+  TFrmImportCsv = class(TForm)
+    SQLConnection1: TSQLConnection;
+    SQLTable1: TSQLTable;
+    DataSetProvider1: TDataSetProvider;
+    SQLTable1id: TIntegerField;
+    SQLTable1descricao: TWideStringField;
+    SQLTable1codigo_siaf: TFMTBCDField;
+    SQLTable1sigla: TWideStringField;
+    ClientDataSet1: TClientDataSet;
+    DataSource1: TDataSource;
+    ClientDataSet1id: TIntegerField;
+    ClientDataSet1descricao: TWideStringField;
+    ClientDataSet1codigo_siaf: TFMTBCDField;
+    ClientDataSet1sigla: TWideStringField;
+    SQLQuery1: TSQLQuery;
+    DataSource2: TDataSource;
+    SQLQuery1id: TIntegerField;
+    SQLQuery1descricao: TWideStringField;
+    SQLQuery1codigo_siaf: TFMTBCDField;
+    SQLQuery1sigla: TWideStringField;
+    DataSetProvider2: TDataSetProvider;
+    ClientDataSet2: TClientDataSet;
+    GroupBox1: TGroupBox;
+    Label1: TLabel;
+    Edit1: TEdit;
+    BtnAbrir: TButton;
+    btnImportar: TButton;
+    OpenDialog1: TOpenDialog;
+    sqlqryIns: TSQLQuery;
+    StaticText1: TStaticText;
+    GroupBox2: TGroupBox;
+    Label2: TLabel;
+    edtPathServ: TEdit;
+    BtnAbrirServ: TButton;
+    BtnImportarServ: TButton;
+    lbl1: TLabel;
+    edtRemuneracao: TEdit;
+    btnAbrRemuneracao: TButton;
+    btnImpRemuneracao: TButton;
+    lbl2: TLabel;
+    edtObservacoes: TEdit;
+    lbl3: TLabel;
+    edtHonorarios: TEdit;
+    btnAbrObservacoes: TButton;
+    btnAbrHonorarios: TButton;
+    btnImpObservacoes: TButton;
+    btnImpHonorarios: TButton;
+    procedure BtnAbrirClick(Sender: TObject);
+    procedure btnImportarClick(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormShow(Sender: TObject);
+    procedure BtnAbrirServClick(Sender: TObject);
+    procedure ImportArqCsv(ATabDestino: string; APathFile:string);
+    procedure BtnImportarServClick(Sender: TObject);
+    procedure btnAbrRemuneracaoClick(Sender: TObject);
+    procedure btnImpRemuneracaoClick(Sender: TObject);
+    procedure btnAbrObservacoesClick(Sender: TObject);
+    procedure btnImpObservacoesClick(Sender: TObject);
+    procedure btnAbrHonorariosClick(Sender: TObject);
+    procedure btnImpHonorariosClick(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  FrmImportCsv: TFrmImportCsv;
+
+implementation
+
+{$R *.dfm}
+
+procedure TFrmImportCsv.btnImpHonorariosClick(Sender: TObject);
+begin
+  ImportArqCsv('observacoes_servidores',edtObservacoes.Text);
+end;
+
+procedure TFrmImportCsv.btnImpObservacoesClick(Sender: TObject);
+begin
+  ImportArqCsv('honorarios_servidores',edtHonorarios.Text);
+end;
+
+procedure TFrmImportCsv.btnAbrHonorariosClick(Sender: TObject);
+begin
+  if OpenDialog1.Execute then
+  begin
+    edtHonorarios.Text := OpenDialog1.FileName;
+  end;
+
+end;
+
+procedure TFrmImportCsv.BtnAbrirClick(Sender: TObject);
+begin
+  if OpenDialog1.Execute then
+  begin
+    Edit1.Text := OpenDialog1.FileName;
+  end;
+end;
+
+procedure TFrmImportCsv.BtnAbrirServClick(Sender: TObject);
+begin
+  if OpenDialog1.Execute then
+  begin
+    edtPathServ.Text := OpenDialog1.FileName;
+  end;
+end;
+
+procedure TFrmImportCsv.btnAbrObservacoesClick(Sender: TObject);
+begin
+  if OpenDialog1.Execute then
+  begin
+    edtObservacoes.Text := OpenDialog1.FileName;
+  end;
+end;
+
+procedure TFrmImportCsv.btnAbrRemuneracaoClick(Sender: TObject);
+begin
+  if OpenDialog1.Execute then
+  begin
+    edtRemuneracao.Text := OpenDialog1.FileName;
+  end;
+end;
+
+procedure TFrmImportCsv.btnImportarClick(Sender: TObject);
+var
+  LCVSFile    : TextFile;
+  LLinha      : string;
+  i,j         : Integer;
+  LQtTab      : Integer;
+  LPosiTAbAnt : Integer;
+  LLinIns     : string;
+  LErros      : TStringList;
+  Trans       : TTransactionDesc;  
+  
+begin
+  LErros := TStringList.Create;
+  LErros.Add('Logando erros de importação');
+ 
+  AssignFile(LCVSFile, Edit1.Text);
+  Reset(LCVSFile);
+  LQtTab :=0;
+  i:= 0;
+
+  while not Eof(LCVSFile) do
+  begin
+    ReadLn(LCVSFile, LLinha);
+    LQtTab      := 0;
+    LPosiTAbAnt := 0;
+    
+    if (i <> 0) then
+    begin
+
+     for j := 1 to Length(LLinha) do
+      begin
+        if (LLinha[j] = ',') then LLinha[j] := '.'
+        else if (LLinha[j] = #0) then LLinha[j] := '0';
+
+        if (LLinha[j] = #9 ) or ( j = Length(LLinha)) then
+        begin
+
+          if ( LPosiTAbAnt = 0)    then
+            LLinIns := LLinIns + QuotedStr(Copy(LLinha, LPosiTAbAnt   , j-1)) + ','
+          else 
+          if ( j = Length(LLinha)) then
+            LLinIns := LLinIns + QuotedStr(Copy(LLinha, LPosiTAbAnt+1 , j-LPosiTAbAnt))   
+          else
+            LLinIns := LLinIns + QuotedStr(Copy(LLinha, LPosiTAbAnt+1 , j-1-LPosiTAbAnt)) + ',';            
+            
+          LPosiTAbAnt := j;             
+        end;
+      end;
+      try
+        Trans.TransactionID := 1;
+        Trans.IsolationLevel := xilREADCOMMITTED;
+        SQLConnection1.StartTransaction( Trans );
+   
+        sqlqryIns.SQL.Clear;
+        sqlqryIns.SQL.Text :=
+          'INSERT INTO "despesas_gastos_diretos" '
+            + ' VALUES ( default, ' + LLinIns + ' )'; 
+    
+//        ShowMessage(IntToStr(i)+ '  - ' + sqlqryIns.SQL.Text);
+        sqlqryIns.ExecSQL;
+        SQLConnection1.Commit(Trans);
+      except
+        on E: Exception do
+        begin
+          LErros.Add(e.Message + ' - Linha:' + IntToStr(i) + ' SQL:' + sqlqryIns.SQL.Text);
+          SQLConnection1.Rollback(Trans);
+        end;
+
+      end;
+
+      LLinIns := '';      
+    end;
+    Inc(i);
+
+  end;
+    
+  LErros.SaveToFile('ErrosImport.txt');
+  // Close the file for the last time
+  CloseFile(LCVSFile);
+
+  Beep;
+  ShowMessage('Arquivo importado com sucesso!!');
+
+  FreeAndNil(LErros);
+
+end;
+
+procedure TFrmImportCsv.BtnImportarServClick(Sender: TObject);
+begin
+  ImportArqCsv('cadastro_servidores',edtPathServ.Text);
+end;
+
+procedure TFrmImportCsv.btnImpRemuneracaoClick(Sender: TObject);
+begin
+  ImportArqCsv('remuneracao_servidores',edtRemuneracao.Text);
+end;
+
+procedure TFrmImportCsv.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  SQLConnection1.Close;
+  sqlqryIns.Close;
+end;
+
+procedure TFrmImportCsv.FormShow(Sender: TObject);
+begin
+  SQLConnection1.Open;
+end;
+
+procedure TFrmImportCsv.ImportArqCsv(ATabDestino, APathFile: string);
+var
+  LCVSFile    : TextFile;
+  LLinha      : string;
+  i,j         : Integer;
+  LQtTab      : Integer;
+  LPosiTAbAnt : Integer;
+  LLinIns     : string;
+  LErros      : TStringList;
+  Trans       : TTransactionDesc;
+
+begin
+  LErros := TStringList.Create;
+  LErros.Add('Logando erros de importação');
+
+  AssignFile(LCVSFile, APathFile);
+  Reset(LCVSFile);
+  LQtTab :=0;
+  i:= 0;
+
+//  while not Eof(LCVSFile) do
+  while i < 5 do
+  begin
+    ReadLn(LCVSFile, LLinha);
+    LQtTab      := 0;
+    LPosiTAbAnt := 0;
+
+    if (i <> 0) then
+    begin
+
+     for j := 1 to Length(LLinha) do
+      begin
+        if (LLinha[j] = ',') then LLinha[j] := '.';
+
+        if (LLinha[j] = #0) then
+        begin
+          LLinIns := LLinIns + QuotedStr('null') + ',';
+          if not (j = Length(LLinha)) then
+          begin
+            LLinIns := LLinIns + ',';
+          end;
+
+          LPosiTAbAnt := j + 1;
+        end
+        else
+        if (LLinha[j] = #9 ) or ( j = Length(LLinha)) then
+        begin
+          if ( LPosiTAbAnt = 0)    then
+            LLinIns := LLinIns + QuotedStr(Copy(LLinha, LPosiTAbAnt   , j-1)) + ','
+          else
+          if ( j = Length(LLinha)) then
+            LLinIns := LLinIns + QuotedStr(Copy(LLinha, LPosiTAbAnt+1 , j-LPosiTAbAnt))
+          else
+            LLinIns := LLinIns + QuotedStr(Copy(LLinha, LPosiTAbAnt+1 , j-1-LPosiTAbAnt)) + ',';
+
+          LPosiTAbAnt := j;
+        end;
+      end;
+      try
+        Trans.TransactionID := 1;
+        Trans.IsolationLevel := xilREADCOMMITTED;
+        SQLConnection1.StartTransaction( Trans );
+
+        sqlqryIns.SQL.Clear;
+        sqlqryIns.SQL.Text :=
+          'INSERT INTO "'+ATabDestino+'" '
+            + ' VALUES ( default, ' + LLinIns + ' )';
+
+//        ShowMessage(IntToStr(i)+ '  - ' + sqlqryIns.SQL.Text);
+        sqlqryIns.ExecSQL;
+        SQLConnection1.Commit(Trans);
+      except
+        on E: Exception do
+        begin
+          LErros.Add(e.Message + ' - Linha:' + IntToStr(i) + ' SQL:' + sqlqryIns.SQL.Text);
+          SQLConnection1.Rollback(Trans);
+        end;
+
+      end;
+
+      LLinIns := '';
+    end;
+    Inc(i);
+
+  end;
+
+  LErros.SaveToFile('ErrosImport.txt');
+  // Close the file for the last time
+  CloseFile(LCVSFile);
+
+  Beep;
+  ShowMessage('Arquivo importado com sucesso!!');
+
+  FreeAndNil(LErros);
+
+end;
+
+end.

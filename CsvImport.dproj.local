@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2014/07/19 15:52:11.000.443,=C:\Users\Jefferson\Documents\RAD Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2014/07/19 15:53:08.000.134,C:\Users\Jefferson\Documents\RAD Studio\Projects\ImportCsv\UntImportCsv.dfm=C:\Users\Jefferson\Documents\RAD Studio\Projects\Unit1.dfm</Transaction>
+    <Transaction>2014/07/19 15:53:08.000.134,C:\Users\Jefferson\Documents\RAD Studio\Projects\ImportCsv\UntImportCsv.pas=C:\Users\Jefferson\Documents\RAD Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2014/07/19 15:53:19.000.069,C:\Users\Jefferson\Documents\RAD Studio\Projects\ImportCsv\CsvImport.dproj=C:\Users\Jefferson\Documents\RAD Studio\Projects\Project1.dproj</Transaction>
+  </Transactions>
+</BorlandProject>

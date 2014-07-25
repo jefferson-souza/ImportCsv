@@ -1,0 +1,219 @@
+object FrmImportCsv: TFrmImportCsv
+  Left = 0
+  Top = 0
+  Caption = 'FrmImportCsv'
+  ClientHeight = 596
+  ClientWidth = 739
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  OldCreateOrder = False
+  OnClose = FormClose
+  OnShow = FormShow
+  PixelsPerInch = 96
+  TextHeight = 13
+  object Label1: TLabel
+    Left = 32
+    Top = 416
+    Width = 99
+    Height = 13
+    Caption = 'Caminho do arquivo:'
+  end
+  object DBGrid1: TDBGrid
+    Left = 32
+    Top = 96
+    Width = 569
+    Height = 120
+    DataSource = DataSource1
+    TabOrder = 0
+    TitleFont.Charset = DEFAULT_CHARSET
+    TitleFont.Color = clWindowText
+    TitleFont.Height = -11
+    TitleFont.Name = 'Tahoma'
+    TitleFont.Style = []
+  end
+  object DBGrid2: TDBGrid
+    Left = 32
+    Top = 296
+    Width = 609
+    Height = 97
+    DataSource = DataSource2
+    TabOrder = 1
+    TitleFont.Charset = DEFAULT_CHARSET
+    TitleFont.Color = clWindowText
+    TitleFont.Height = -11
+    TitleFont.Name = 'Tahoma'
+    TitleFont.Style = []
+  end
+  object Edit1: TEdit
+    Left = 32
+    Top = 435
+    Width = 481
+    Height = 21
+    TabOrder = 2
+  end
+  object BtnAbrir: TButton
+    Left = 526
+    Top = 433
+    Width = 75
+    Height = 25
+    Caption = 'Abrir'
+    TabOrder = 3
+    OnClick = BtnAbrirClick
+  end
+  object btnImportar: TButton
+    Left = 607
+    Top = 433
+    Width = 75
+    Height = 25
+    Caption = 'Importar'
+    TabOrder = 4
+    OnClick = btnImportarClick
+  end
+  object SQLConnection1: TSQLConnection
+    ConnectionName = 'PostgreSQLUfpb'
+    DriverName = 'Odbc'
+    LoginPrompt = False
+    Params.Strings = (
+      'DriverName=Odbc'
+      'DriverUnit=Data.DBXOdbc'
+      'DriverPackageLoader=TDBXOdbcDriverLoader,DBXOdbcDriver190.bpl'
+      
+        'MetaDataPackageLoader=TDBXOdbcMetaDataCommandFactory,DbxOdbcDriv' +
+        'er190.bpl'
+      'IsolationLevel=ReadCommitted'
+      'RowSetSize=20'
+      
+        'DriverAssemblyLoader=Borland.Data.TDBXOdbcDriverLoader,Borland.D' +
+        'ata.DbxOdbcDriver,Version=19.0.0.0,Culture=neutral,PublicKeyToke' +
+        'n=91d62ebb5b0d1b1b'
+      
+        'MetaDataAssemblyLoader=Borland.Data.TDBXOdbcMetaDataCommandFacto' +
+        'ry,Borland.Data.DbxOdbcDriver,Version=19.0.0.0,Culture=neutral,P' +
+        'ublicKeyToken=91d62ebb5b0d1b1b'
+      'Database=PostgreSQLUfpb'
+      'User_Name=postgres'
+      'Password=admin')
+    Connected = True
+    Left = 56
+    Top = 32
+  end
+  object SQLTable1: TSQLTable
+    MaxBlobSize = -1
+    SQLConnection = SQLConnection1
+    TableName = 'UND_UFPB'
+    Left = 152
+    Top = 32
+    object SQLTable1id: TIntegerField
+      FieldName = 'id'
+      Required = True
+    end
+    object SQLTable1descricao: TWideStringField
+      FieldName = 'descricao'
+      Size = 50
+    end
+    object SQLTable1codigo_siaf: TFMTBCDField
+      FieldName = 'codigo_siaf'
+      Precision = 10
+      Size = 0
+    end
+    object SQLTable1sigla: TWideStringField
+      FieldName = 'sigla'
+      Size = 10
+    end
+  end
+  object DataSetProvider1: TDataSetProvider
+    DataSet = SQLTable1
+    Left = 248
+    Top = 40
+  end
+  object ClientDataSet1: TClientDataSet
+    Aggregates = <>
+    Params = <>
+    ProviderName = 'DataSetProvider1'
+    Left = 336
+    Top = 40
+    object ClientDataSet1id: TIntegerField
+      FieldName = 'id'
+      Required = True
+    end
+    object ClientDataSet1descricao: TWideStringField
+      FieldName = 'descricao'
+      Size = 50
+    end
+    object ClientDataSet1codigo_siaf: TFMTBCDField
+      FieldName = 'codigo_siaf'
+      Precision = 10
+      Size = 0
+    end
+    object ClientDataSet1sigla: TWideStringField
+      FieldName = 'sigla'
+      Size = 10
+    end
+  end
+  object DataSource1: TDataSource
+    DataSet = ClientDataSet1
+    Left = 416
+    Top = 40
+  end
+  object SQLQuery1: TSQLQuery
+    MaxBlobSize = -1
+    Params = <>
+    SQL.Strings = (
+      'select * from "UND_UFPB"'
+      'where sigla = '#39'UFPB'#39)
+    SQLConnection = SQLConnection1
+    Left = 56
+    Top = 232
+    object SQLQuery1id: TIntegerField
+      FieldName = 'id'
+      Required = True
+    end
+    object SQLQuery1descricao: TWideStringField
+      FieldName = 'descricao'
+      Size = 50
+    end
+    object SQLQuery1codigo_siaf: TFMTBCDField
+      FieldName = 'codigo_siaf'
+      Precision = 10
+      Size = 0
+    end
+    object SQLQuery1sigla: TWideStringField
+      FieldName = 'sigla'
+      Size = 10
+    end
+  end
+  object DataSource2: TDataSource
+    DataSet = ClientDataSet2
+    Left = 344
+    Top = 232
+  end
+  object DataSetProvider2: TDataSetProvider
+    DataSet = SQLQuery1
+    ResolveToDataSet = True
+    Options = [poReadOnly, poUseQuoteChar]
+    Left = 152
+    Top = 232
+  end
+  object ClientDataSet2: TClientDataSet
+    Aggregates = <>
+    Params = <>
+    ProviderName = 'DataSetProvider2'
+    Left = 264
+    Top = 232
+  end
+  object OpenDialog1: TOpenDialog
+    Left = 496
+    Top = 432
+  end
+  object sqlqryIns: TSQLQuery
+    MaxBlobSize = -1
+    Params = <>
+    SQLConnection = SQLConnection1
+    Left = 464
+    Top = 240
+  end
+end
