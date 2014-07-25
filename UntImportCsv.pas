@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Data.DBXOdbc, Data.FMTBcd, Data.DB,
   Vcl.Grids, Vcl.DBGrids, Data.SqlExpr, Datasnap.Provider, Datasnap.DBClient,
-  Vcl.StdCtrls, Vcl.FileCtrl, Vcl.Buttons;
+  Vcl.StdCtrls, Vcl.FileCtrl, Vcl.Buttons, Vcl.ComCtrls;
 
 type
   TFrmImportCsv = class(TForm)
@@ -31,51 +31,59 @@ type
     SQLQuery1sigla: TWideStringField;
     DataSetProvider2: TDataSetProvider;
     ClientDataSet2: TClientDataSet;
-    GroupBox1: TGroupBox;
-    Label1: TLabel;
-    edtPagamentos: TEdit;
-    btnAbrirPgto: TButton;
-    btnImportar: TButton;
     OpenDialog1: TOpenDialog;
     sqlqryIns: TSQLQuery;
     StaticText1: TStaticText;
-    GroupBox2: TGroupBox;
-    Label2: TLabel;
-    edtCadServidores: TEdit;
-    BtnAbrirServ: TButton;
-    BtnImportarServ: TButton;
+    fllstAux: TFileListBox;
+    btn1: TButton;
+    btnSalvarPath: TButton;
+    btnImport: TButton;
+    pgc1: TPageControl;
+    tsDespesas: TTabSheet;
+    tsServidores: TTabSheet;
+    ts3: TTabSheet;
+    grp1: TGroupBox;
+    lbl7: TLabel;
+    lbl4: TLabel;
+    lbl5: TLabel;
+    lbl6: TLabel;
+    edtPagamentos: TEdit;
+    btnAbrirPgto: TButton;
+    btnImportar: TButton;
+    edtDiarias: TEdit;
+    edtFornecedores: TEdit;
+    edtCartao: TEdit;
+    btnAbrirDiarias: TButton;
+    btnAbrirFornecedores: TButton;
+    btnCartao: TBitBtn;
+    grp2: TGroupBox;
+    lbl8: TLabel;
     lbl1: TLabel;
+    lbl2: TLabel;
+    lbl3: TLabel;
+    edtCadServidores: TEdit;
+    btnBtnAbrirServ: TButton;
+    btnBtnImportarServ: TButton;
     edtRemuneracao: TEdit;
     btnAbrRemuneracao: TButton;
     btnImpRemuneracao: TButton;
-    lbl2: TLabel;
     edtObservacoes: TEdit;
-    lbl3: TLabel;
     edtHonorarios: TEdit;
     btnAbrObservacoes: TButton;
     btnAbrHonorarios: TButton;
     btnImpObservacoes: TButton;
     btnImpHonorarios: TButton;
-    fllstAux: TFileListBox;
-    btn1: TButton;
-    lbl4: TLabel;
-    edtDiarias: TEdit;
-    lbl5: TLabel;
-    edtFornecedores: TEdit;
-    lbl6: TLabel;
-    edtCartao: TEdit;
-    btnSalvarPath: TButton;
-    btnImport: TButton;
-    btnAbrirDiarias: TButton;
-    btnAbrirFornecedores: TButton;
-    btnCartao: TBitBtn;
+    ts1: TTabSheet;
+    tsArqImportados: TTabSheet;
+    btn2: TButton;
+    btn3: TButton;
     procedure btnAbrirPgtoClick(Sender: TObject);
     procedure btnImportarClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormShow(Sender: TObject);
-    procedure BtnAbrirServClick(Sender: TObject);
+    procedure btnBtnAbrirServClick(Sender: TObject);
     procedure ImportArqCsv(ATabDestino: string; APathFile:string);
-    procedure BtnImportarServClick(Sender: TObject);
+    procedure btnBtnImportarServClick(Sender: TObject);
     procedure btnAbrRemuneracaoClick(Sender: TObject);
     procedure btnImpRemuneracaoClick(Sender: TObject);
     procedure btnAbrObservacoesClick(Sender: TObject);
@@ -150,7 +158,7 @@ begin
   end;
 end;
 
-procedure TFrmImportCsv.BtnAbrirServClick(Sender: TObject);
+procedure TFrmImportCsv.btnBtnAbrirServClick(Sender: TObject);
 begin
   if OpenDialog1.Execute then
   begin
@@ -269,7 +277,7 @@ begin
 
 end;
 
-procedure TFrmImportCsv.BtnImportarServClick(Sender: TObject);
+procedure TFrmImportCsv.btnBtnImportarServClick(Sender: TObject);
 begin
   ImportArqCsv('cadastro_servidores',edtCadServidores.Text);
 end;
@@ -474,7 +482,6 @@ begin
   edtRemuneracao.Text   := sqlqryIns.FieldByName('servidores_remuneracoes').AsString;
   edtHonorarios.Text    := sqlqryIns.FieldByName('servidores_honorarios').AsString;
   edtObservacoes.Text   := sqlqryIns.FieldByName('servidores_observacoes').AsString;
-  sqlqryIns.Next;
 
 end;
 
