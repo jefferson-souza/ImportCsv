@@ -6,31 +6,17 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Data.DBXOdbc, Data.FMTBcd, Data.DB,
   Vcl.Grids, Vcl.DBGrids, Data.SqlExpr, Datasnap.Provider, Datasnap.DBClient,
-  Vcl.StdCtrls, Vcl.FileCtrl, Vcl.Buttons, Vcl.ComCtrls;
+  Vcl.StdCtrls, Vcl.FileCtrl, Vcl.Buttons, Vcl.ComCtrls, Vcl.DBCtrls, Vcl.Mask,
+  Vcl.ExtCtrls;
 
 type
   TFrmImportCsv = class(TForm)
     SQLConnection1: TSQLConnection;
-    SQLTable1: TSQLTable;
-    DataSetProvider1: TDataSetProvider;
-    SQLTable1id: TIntegerField;
-    SQLTable1descricao: TWideStringField;
-    SQLTable1codigo_siaf: TFMTBCDField;
-    SQLTable1sigla: TWideStringField;
-    ClientDataSet1: TClientDataSet;
-    DataSource1: TDataSource;
-    ClientDataSet1id: TIntegerField;
-    ClientDataSet1descricao: TWideStringField;
-    ClientDataSet1codigo_siaf: TFMTBCDField;
-    ClientDataSet1sigla: TWideStringField;
-    SQLQuery1: TSQLQuery;
-    DataSource2: TDataSource;
-    SQLQuery1id: TIntegerField;
-    SQLQuery1descricao: TWideStringField;
-    SQLQuery1codigo_siaf: TFMTBCDField;
-    SQLQuery1sigla: TWideStringField;
-    DataSetProvider2: TDataSetProvider;
-    ClientDataSet2: TClientDataSet;
+    dtstprvdrCaminho: TDataSetProvider;
+    dsCaminho: TDataSource;
+    dsArqImportados: TDataSource;
+    dtstprvdrArqImportados: TDataSetProvider;
+    CdsArqImportados: TClientDataSet;
     OpenDialog1: TOpenDialog;
     sqlqryIns: TSQLQuery;
     StaticText1: TStaticText;
@@ -77,6 +63,36 @@ type
     tsArqImportados: TTabSheet;
     btn2: TButton;
     btn3: TButton;
+    dbgrdArqImportados: TDBGrid;
+    dbgrd1: TDBGrid;
+    CdsCaminho: TClientDataSet;
+    dbnvgr1: TDBNavigator;
+    dbedtcaminho: TDBEdit;
+    dbcbbativado: TDBComboBox;
+    dbedttabela_destino: TDBEdit;
+    intgrfldCdsArqImportid: TIntegerField;
+    wdstrngfldCdsArqImportcaminho: TWideStringField;
+    wdstrngfldCdsArqImportativado: TWideStringField;
+    wdstrngfldCdsArqImporttabela_destino: TWideStringField;
+    sqldtstCaminho: TSQLDataSet;
+    intgrfldTeste1id: TIntegerField;
+    wdstrngfldTeste1caminho: TWideStringField;
+    wdstrngfldTeste1ativado: TWideStringField;
+    wdstrngfldTeste1tabela_destino: TWideStringField;
+    lbl9: TLabel;
+    lbl10: TLabel;
+    lbl11: TLabel;
+    sqldtstArqImportados: TSQLDataSet;
+    intgrfldArqImportadosid: TIntegerField;
+    intgrfldArqImportadoscaminho_arquivo_id: TIntegerField;
+    wdstrngfldArqImportadosnome: TWideStringField;
+    sqldtstArqImportadosdata_importacao: TSQLTimeStampField;
+    fmtbcdfldArqImportadosqtde_registros: TFMTBCDField;
+    intgrfldCdsArqImportadosid: TIntegerField;
+    wdstrngfldCdsArqImportadosnome: TWideStringField;
+    CdsArqImportadosdata_importacao: TSQLTimeStampField;
+    fmtbcdfldCdsArqImportadosqtde_registros: TFMTBCDField;
+    intgrfldCdsArqImportadoscaminho_arquivo_id: TIntegerField;
     procedure btnAbrirPgtoClick(Sender: TObject);
     procedure btnImportarClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
@@ -90,7 +106,6 @@ type
     procedure btnImpObservacoesClick(Sender: TObject);
     procedure btnAbrHonorariosClick(Sender: TObject);
     procedure btnImpHonorariosClick(Sender: TObject);
-    procedure MoverArquivo(Origem, Destino,Arquivo: String);
     procedure btn1Click(Sender: TObject);
     procedure btnSalvarPathClick(Sender: TObject);
     procedure btnAbrirDiariasClick(Sender: TObject);
@@ -98,6 +113,9 @@ type
     procedure btnCartaoClick(Sender: TObject);
     procedure edtCadServidoresDblClick(Sender: TObject);
     procedure LoadEdits;
+    procedure CdsCaminhoAfterPost(DataSet: TDataSet);
+    procedure CdsCaminhoAfterInsert(DataSet: TDataSet);
+    procedure dbedtcaminhoDblClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -231,7 +249,7 @@ begin
             LLinIns := LLinIns + QuotedStr(Copy(LLinha, LPosiTAbAnt   , j-1)) + ','
           else 
           if ( j = Length(LLinha)) then
-            LLinIns := LLinIns + QuotedStr(Copy(LLinha, LPosiTAbAnt+1 , j-LPosiTAbAnt))   
+            LLinIns := LLinIns + QuotedStr(Copy(LLinha, LPosiTAbAnt+1 , j-LPosiTAbAnt))
           else
             LLinIns := LLinIns + QuotedStr(Copy(LLinha, LPosiTAbAnt+1 , j-1-LPosiTAbAnt)) + ',';            
             
@@ -291,42 +309,68 @@ procedure TFrmImportCsv.btnSalvarPathClick(Sender: TObject);
 var
   LIsEmpty: Boolean;
 begin
-  sqlqryIns.SQL.Clear;
-  sqlqryIns.SQL.Add('Select 1 from "caminho_arquivos" ');
-  sqlqryIns.Open;
-  LIsEmpty := sqlqryIns.IsEmpty;
+  if CdsCaminho.State in [dsInsert, dsEdit] then
+    CdsCaminho.ApplyUpdates(0);
+
+//  sqlqryIns.SQL.Clear;
+//  sqlqryIns.SQL.Add('Select 1 from "caminho_arquivos" ');
+//  sqlqryIns.Open;
+//  LIsEmpty := sqlqryIns.IsEmpty;
+//  sqlqryIns.Close;
+//  sqlqryIns.SQL.Clear;
+//
+//  if LIsEmpty then
+//  begin
+//    sqlqryIns.SQL.Add(
+//        'INSERT INTO "caminho_arquivos" VALUES '
+//      + '( :gastos_pagamentos, :gastos_cartao, :gastos_diarias_passagens, :gastos_fornecedores, '
+//      + '  :servidores_cadastro, :servidores_remuneracoes, :servidores_honorarios, '
+//      + '  :servidores_observacoes )' );
+//  end
+//  else
+//  begin
+//    sqlqryIns.SQL.Add(
+//        'UPDATE "caminho_arquivos" SET '
+//      + 'gastos_pagamentos=:gastos_pagamentos, gastos_cartao=:gastos_cartao, gastos_diarias_passagens=:gastos_diarias_passagens, '
+//      + 'gastos_fornecedores=:gastos_fornecedores, servidores_cadastro=:servidores_cadastro, servidores_remuneracoes=:servidores_remuneracoes, '
+//      + 'servidores_honorarios=:servidores_honorarios, servidores_observacoes=:servidores_observacoes ');
+//  end;
+//
+//  sqlqryIns.ParamByName('gastos_pagamentos').AsString         := edtPagamentos.Text;
+//  sqlqryIns.ParamByName('gastos_cartao').AsString             := edtCartao.Text;
+//  sqlqryIns.ParamByName('gastos_diarias_passagens').AsString  := edtDiarias.Text;
+//  sqlqryIns.ParamByName('gastos_fornecedores').AsString       := edtFornecedores.Text;
+//
+//  sqlqryIns.ParamByName('servidores_cadastro').AsString       := edtCadServidores.Text;
+//  sqlqryIns.ParamByName('servidores_remuneracoes').AsString   := edtRemuneracao.Text;
+//  sqlqryIns.ParamByName('servidores_honorarios').AsString     := edtHonorarios.Text;
+//  sqlqryIns.ParamByName('servidores_observacoes').AsString    := edtObservacoes.Text;
+//
+//  sqlqryIns.ExecSQL;
+
+end;
+
+procedure TFrmImportCsv.CdsCaminhoAfterInsert(DataSet: TDataSet);
+begin
   sqlqryIns.Close;
   sqlqryIns.SQL.Clear;
+  sqlqryIns.SQL.Add('SELECT NEXTVAL('+QuotedStr('caminho_arquivos_id_seq') + ')');
+  sqlqryIns.Open;
+  CdsCaminho.FieldByName('id').AsInteger := sqlqryIns.FieldByName('nextval').AsInteger;
+end;
 
-  if LIsEmpty then
+procedure TFrmImportCsv.CdsCaminhoAfterPost(DataSet: TDataSet);
+begin
+  CdsCaminho.ApplyUpdates(0);
+end;
+
+procedure TFrmImportCsv.dbedtcaminhoDblClick(Sender: TObject);
+begin
+  if OpenDialog1.Execute then
   begin
-    sqlqryIns.SQL.Add(
-        'INSERT INTO "caminho_arquivos" VALUES '
-      + '( :gastos_pagamentos, :gastos_cartao, :gastos_diarias_passagens, :gastos_fornecedores, '
-      + '  :servidores_cadastro, :servidores_remuneracoes, :servidores_honorarios, '
-      + '  :servidores_observacoes )' );
-  end
-  else
-  begin
-    sqlqryIns.SQL.Add(
-        'UPDATE "caminho_arquivos" SET '
-      + 'gastos_pagamentos=:gastos_pagamentos, gastos_cartao=:gastos_cartao, gastos_diarias_passagens=:gastos_diarias_passagens, '
-      + 'gastos_fornecedores=:gastos_fornecedores, servidores_cadastro=:servidores_cadastro, servidores_remuneracoes=:servidores_remuneracoes, '
-      + 'servidores_honorarios=:servidores_honorarios, servidores_observacoes=:servidores_observacoes ');
+    CdsCaminho.Edit;
+    CdsCaminho.FieldByName('caminho').AsString := ExtractFileDir(OpenDialog1.FileName);
   end;
-
-  sqlqryIns.ParamByName('gastos_pagamentos').AsString         := edtPagamentos.Text;
-  sqlqryIns.ParamByName('gastos_cartao').AsString             := edtCartao.Text;
-  sqlqryIns.ParamByName('gastos_diarias_passagens').AsString  := edtDiarias.Text;
-  sqlqryIns.ParamByName('gastos_fornecedores').AsString       := edtFornecedores.Text;
-
-  sqlqryIns.ParamByName('servidores_cadastro').AsString       := edtCadServidores.Text;
-  sqlqryIns.ParamByName('servidores_remuneracoes').AsString   := edtRemuneracao.Text;
-  sqlqryIns.ParamByName('servidores_honorarios').AsString     := edtHonorarios.Text;
-  sqlqryIns.ParamByName('servidores_observacoes').AsString    := edtObservacoes.Text;
-
-  sqlqryIns.ExecSQL;
-
 end;
 
 procedure TFrmImportCsv.edtCadServidoresDblClick(Sender: TObject);
@@ -341,12 +385,16 @@ procedure TFrmImportCsv.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   SQLConnection1.Close;
   sqlqryIns.Close;
+  sqldtstCaminho.Close;
+  CdsCaminho.Close;
 end;
 
 procedure TFrmImportCsv.FormShow(Sender: TObject);
 begin
   SQLConnection1.Open;
   LoadEdits;
+  sqldtstCaminho.Open;
+  CdsCaminho.Open;
 
 end;
 
@@ -355,7 +403,6 @@ var
   LCVSFile    : TextFile;
   LLinha      : string;
   i,j         : Integer;
-  LQtTab      : Integer;
   LPosiTAbAnt : Integer;
   LLinIns     : string;
   LErros      : TStringList;
@@ -368,14 +415,12 @@ begin
 
   AssignFile(LCVSFile, APathFile);
   Reset(LCVSFile);
-  LQtTab :=0;
   i:= 0;
 
 //  while not Eof(LCVSFile) do
   while i < 5 do
   begin
     ReadLn(LCVSFile, LLinha);
-    LQtTab      := 0;
     LPosiTAbAnt := 0;
 
     if (i <> 0) then
@@ -468,30 +513,23 @@ end;
 
 procedure TFrmImportCsv.LoadEdits;
 begin
-  sqlqryIns.Close;
-  sqlqryIns.sql.Clear;
-  sqlqryIns.SQL.Add('select * from "caminho_arquivos"');
-  sqlqryIns.Open;
-
-  edtPagamentos.Text    := sqlqryIns.FieldByName('gastos_pagamentos').AsString;
-  edtCartao.Text        := sqlqryIns.FieldByName('gastos_cartao').AsString;
-  edtDiarias.Text       := sqlqryIns.FieldByName('gastos_diarias_passagens').AsString;
-  edtFornecedores.Text  := sqlqryIns.FieldByName('gastos_fornecedores').AsString;
-
-  edtCadServidores.Text := sqlqryIns.FieldByName('servidores_cadastro').AsString;
-  edtRemuneracao.Text   := sqlqryIns.FieldByName('servidores_remuneracoes').AsString;
-  edtHonorarios.Text    := sqlqryIns.FieldByName('servidores_honorarios').AsString;
-  edtObservacoes.Text   := sqlqryIns.FieldByName('servidores_observacoes').AsString;
+//  sqlqryIns.Close;
+//  sqlqryIns.sql.Clear;
+//  sqlqryIns.SQL.Add('select * from "caminho_arquivos"');
+//  sqlqryIns.Open;
+//
+//  edtPagamentos.Text    := sqlqryIns.FieldByName('gastos_pagamentos').AsString;
+//  edtCartao.Text        := sqlqryIns.FieldByName('gastos_cartao').AsString;
+//  edtDiarias.Text       := sqlqryIns.FieldByName('gastos_diarias_passagens').AsString;
+//  edtFornecedores.Text  := sqlqryIns.FieldByName('gastos_fornecedores').AsString;
+//
+//  edtCadServidores.Text := sqlqryIns.FieldByName('servidores_cadastro').AsString;
+//  edtRemuneracao.Text   := sqlqryIns.FieldByName('servidores_remuneracoes').AsString;
+//  edtHonorarios.Text    := sqlqryIns.FieldByName('servidores_honorarios').AsString;
+//  edtObservacoes.Text   := sqlqryIns.FieldByName('servidores_observacoes').AsString;
 
 end;
 
-procedure TFrmImportCsv.MoverArquivo(Origem, Destino,Arquivo: String);
-var
-  o, d: PWideChar;
-begin
-  o:= PWideChar(Origem + '\' + Arquivo);
-  d:= PWideChar(Destino + '\' + Arquivo);
-  MoveFile(o,d);
-end;
+
 
 end.

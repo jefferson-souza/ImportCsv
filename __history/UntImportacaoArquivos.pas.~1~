@@ -1,0 +1,33 @@
+unit UntImportacaoArquivos;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Data.DBXOdbc, Data.SqlExpr;
+
+type
+  TFrmImportCsv = class(TComponent)
+    private
+      FQrInsReg  : TSQLQuery;
+      FCon       : TSQLConnection;
+
+    public
+      constructor Create(AArquivo: string;ACon:TSQLConnection;AOwner: TComponent); override;
+  end;
+
+implementation
+
+{ TFrmImportCsv }
+
+constructor TFrmImportCsv.Create(AArquivo: string; ACon:TSQLConnection;AOwner: TComponent);
+begin
+  inherited;
+  FCon := ACon;
+  FQrInsReg := TSQLQuery.Create(Self);
+  FQrInsReg.SQLConnection := FCon;
+end;
+
+
+
+end.

@@ -2,7 +2,8 @@ program CsvImport;
 
 uses
   Vcl.Forms,
-  UntImportCsv in 'UntImportCsv.pas' {FrmImportCsv};
+  UntImportCsv in 'UntImportCsv.pas' {FrmImportCsv},
+  UntImportacaoArquivos in 'UntImportacaoArquivos.pas';
 
 {$R *.res}
 

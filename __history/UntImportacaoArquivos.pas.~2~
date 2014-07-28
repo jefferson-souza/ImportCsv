@@ -1,0 +1,160 @@
+unit UntImportacaoArquivos;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Data.DBXOdbc, Data.SqlExpr;
+
+type
+  TFrmImportCsv = class(TComponent)
+    private
+      FQrInsReg   : TSQLQuery;
+      FCon        : TSQLConnection;
+      FArquivo    : string;
+      FTabDestino : string;
+
+      procedure ImportArquivo;
+    public
+//      constructor Create(AArquivo:string; ATabDestino: string; ACon:TSQLConnection; AOwner: TComponent); override;
+     constructor Create( AOwner: TComponent);override;
+  end;
+
+implementation
+
+{ TFrmImportCsv }
+
+//constructor TFrmImportCsv.Create(AArquivo, ATabDestino: string;
+//  ACon: TSQLConnection; AOwner: TComponent);
+//begin
+//  inherited create(AOwner);
+//  FCon        := ACon;
+//  FQrInsReg   := TSQLQuery.Create(Self);
+//  FArquivo    := AArquivo;
+//  FTabDestino := ATabDestino;
+//  FQrInsReg.SQLConnection := FCon;
+//
+//end;
+
+constructor TFrmImportCsv.Create(AOwner: TComponent);
+begin
+  inherited;
+{}
+end;
+
+procedure TFrmImportCsv.ImportArquivo;
+var
+  LCVSFile    : TextFile;
+  LLinha      : string;
+  i,j         : Integer;
+  LQtTab      : Integer;
+  LPosiTAbAnt : Integer;
+  LLinIns     : string;
+  LErros      : TStringList;
+  Trans       : TTransactionDesc;
+  LToken      : string;
+
+begin
+  LErros := TStringList.Create;
+  LErros.Add('Logando erros de importação para arquivo: ' + FArquivo);
+
+  AssignFile(LCVSFile, FArquivo);
+  Reset(LCVSFile);
+  LQtTab :=0;
+  i:= 0;
+
+//  while not Eof(LCVSFile) do
+  while i < 5 do
+  begin
+    ReadLn(LCVSFile, LLinha);
+    LQtTab      := 0;
+    LPosiTAbAnt := 0;
+
+    if (i <> 0) then
+    begin
+      j := 1;
+
+     for j := 1 to Length(LLinha) do
+      begin
+        if (LLinha[j] = ',') then LLinha[j] := '.';
+
+        if (LLinha[j] = #9 ) or ( j = Length(LLinha)) then
+        begin
+          if ( LPosiTAbAnt = 0)    then
+          begin
+            LToken  := Copy(LLinha, LPosiTAbAnt   , j-1);
+            if (LToken = #0) then
+            begin
+              LToken := 'null';
+              LLinIns := LLinIns + LToken + ',';
+            end
+            else
+              LLinIns := LLinIns + QuotedStr(LToken) + ',';
+          end
+          else
+          if ( j = Length(LLinha)) then
+          begin
+            LToken  := Copy(LLinha, LPosiTAbAnt+1 , j-LPosiTAbAnt);
+            if (LToken = #0) then
+            begin
+              LToken := 'null';
+              LLinIns := LLinIns + LToken;
+            end
+            else
+              LLinIns := LLinIns + QuotedStr(LToken);
+          end
+          else
+          begin
+            LToken  := Copy(LLinha, LPosiTAbAnt+1 , j-1-LPosiTAbAnt);
+            if (LToken = #0)then
+            begin
+              LToken := 'null';
+              LLinIns := LLinIns + LToken + ',';
+            end
+            else
+              LLinIns := LLinIns + QuotedStr(LToken) + ',';
+
+          end;
+
+          LPosiTAbAnt := j;
+        end;
+      end;
+      try
+        Trans.TransactionID := 1;
+        Trans.IsolationLevel := xilREADCOMMITTED;
+        FCon.StartTransaction( Trans );
+
+        FQrInsReg.SQL.Clear;
+        FQrInsReg.SQL.Text :=
+          'INSERT INTO "'+FTabDestino+'" '
+            + ' VALUES ( default, ' + LLinIns + ' )';
+
+//        ShowMessage(IntToStr(i)+ '  - ' + sqlqryIns.SQL.Text);
+        FQrInsReg.ExecSQL;
+        FCon.Commit(Trans);
+      except
+        on E: Exception do
+        begin
+          LErros.Add(e.Message + ' - Linha:' + IntToStr(i) + ' SQL:' + FQrInsReg.SQL.Text);
+          FCon.Rollback(Trans);
+        end;
+
+      end;
+
+      LLinIns := '';
+    end;
+    Inc(i);
+
+  end;
+
+  LErros.SaveToFile('ErrosImport.txt');
+  // Close the file for the last time
+  CloseFile(LCVSFile);
+
+  Beep;
+  ShowMessage('Arquivo importado com sucesso!!');
+
+  FreeAndNil(LErros);
+end;
+
+end.
