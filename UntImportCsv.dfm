@@ -2,7 +2,7 @@ object FrmImportCsv: TFrmImportCsv
   Left = 0
   Top = 0
   Caption = 'Importador de Arquivos CSV - Portal da Transpar'#234'ncia'
-  ClientHeight = 430
+  ClientHeight = 425
   ClientWidth = 926
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -29,40 +29,23 @@ object FrmImportCsv: TFrmImportCsv
     ParentFont = False
     TabOrder = 0
   end
-  object fllstAux: TFileListBox
-    Left = 768
-    Top = 200
-    Width = 145
-    Height = 97
-    ItemHeight = 13
-    Mask = '*.dll'
-    TabOrder = 1
-  end
-  object btn1: TButton
-    Left = 768
-    Top = 303
-    Width = 75
-    Height = 25
-    Caption = 'btn1'
-    TabOrder = 2
-    OnClick = btn1Click
-  end
   object btnSalvarPath: TButton
     Left = 393
     Top = 367
     Width = 75
     Height = 25
     Caption = 'Salvar'
-    TabOrder = 3
+    TabOrder = 1
     OnClick = btnSalvarPathClick
   end
   object btnImport: TButton
-    Left = 476
+    Left = 474
     Top = 367
     Width = 75
     Height = 25
     Caption = 'Importar'
-    TabOrder = 4
+    TabOrder = 2
+    OnClick = btnImportClick
   end
   object pgc1: TPageControl
     Left = 25
@@ -70,7 +53,7 @@ object FrmImportCsv: TFrmImportCsv
     Width = 712
     Height = 300
     ActivePage = tsArqImportados
-    TabOrder = 5
+    TabOrder = 3
     object tsDespesas: TTabSheet
       Caption = 'Despesas'
       object grp1: TGroupBox
@@ -508,7 +491,8 @@ object FrmImportCsv: TFrmImportCsv
     Width = 75
     Height = 25
     Caption = 'Parar'
-    TabOrder = 6
+    TabOrder = 4
+    OnClick = btn2Click
   end
   object btn3: TButton
     Left = 643
@@ -516,7 +500,7 @@ object FrmImportCsv: TFrmImportCsv
     Width = 75
     Height = 25
     Caption = 'Para Tray'
-    TabOrder = 7
+    TabOrder = 5
   end
   object SQLConnection1: TSQLConnection
     ConnectionName = 'PostgreSQLUfpb'
@@ -549,32 +533,32 @@ object FrmImportCsv: TFrmImportCsv
   object dtstprvdrCaminho: TDataSetProvider
     DataSet = sqldtstCaminho
     Options = [poAllowMultiRecordUpdates, poAutoRefresh, poUseQuoteChar]
-    Left = 808
-    Top = 64
+    Left = 152
+    Top = 360
   end
   object dsCaminho: TDataSource
     DataSet = CdsCaminho
-    Left = 872
-    Top = 64
+    Left = 216
+    Top = 360
   end
   object dsArqImportados: TDataSource
     DataSet = CdsArqImportados
-    Left = 872
-    Top = 152
+    Left = 216
+    Top = 400
   end
   object dtstprvdrArqImportados: TDataSetProvider
     DataSet = sqldtstArqImportados
     ResolveToDataSet = True
     Options = [poReadOnly, poUseQuoteChar]
-    Left = 808
-    Top = 152
+    Left = 152
+    Top = 400
   end
   object CdsArqImportados: TClientDataSet
     Aggregates = <>
     Params = <>
     ProviderName = 'dtstprvdrArqImportados'
-    Left = 840
-    Top = 152
+    Left = 184
+    Top = 400
     object intgrfldCdsArqImportadosid: TIntegerField
       FieldName = 'id'
       KeyFields = 'id'
@@ -618,8 +602,8 @@ object FrmImportCsv: TFrmImportCsv
     ProviderName = 'dtstprvdrCaminho'
     AfterInsert = CdsCaminhoAfterInsert
     AfterPost = CdsCaminhoAfterPost
-    Left = 840
-    Top = 64
+    Left = 184
+    Top = 360
     object intgrfldCdsArqImportid: TIntegerField
       AutoGenerateValue = arAutoInc
       FieldName = 'id'
@@ -646,8 +630,8 @@ object FrmImportCsv: TFrmImportCsv
     MaxBlobSize = -1
     Params = <>
     SQLConnection = SQLConnection1
-    Left = 768
-    Top = 64
+    Left = 112
+    Top = 360
     object intgrfldTeste1id: TIntegerField
       AutoGenerateValue = arAutoInc
       FieldName = 'id'
@@ -676,8 +660,8 @@ object FrmImportCsv: TFrmImportCsv
     MaxBlobSize = -1
     Params = <>
     SQLConnection = SQLConnection1
-    Left = 776
-    Top = 152
+    Left = 120
+    Top = 400
     object intgrfldArqImportadosid: TIntegerField
       FieldName = 'id'
       KeyFields = 'caminho_arquivo_id'
@@ -698,5 +682,12 @@ object FrmImportCsv: TFrmImportCsv
       Precision = 10
       Size = 0
     end
+  end
+  object tmrDispImport: TTimer
+    Enabled = False
+    Interval = 10000
+    OnTimer = tmrDispImportTimer
+    Left = 648
+    Top = 48
   end
 end

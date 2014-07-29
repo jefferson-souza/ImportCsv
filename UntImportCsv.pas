@@ -7,7 +7,7 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Data.DBXOdbc, Data.FMTBcd, Data.DB,
   Vcl.Grids, Vcl.DBGrids, Data.SqlExpr, Datasnap.Provider, Datasnap.DBClient,
   Vcl.StdCtrls, Vcl.FileCtrl, Vcl.Buttons, Vcl.ComCtrls, Vcl.DBCtrls, Vcl.Mask,
-  Vcl.ExtCtrls;
+  Vcl.ExtCtrls, Contnrs;
 
 type
   TFrmImportCsv = class(TForm)
@@ -20,8 +20,6 @@ type
     OpenDialog1: TOpenDialog;
     sqlqryIns: TSQLQuery;
     StaticText1: TStaticText;
-    fllstAux: TFileListBox;
-    btn1: TButton;
     btnSalvarPath: TButton;
     btnImport: TButton;
     pgc1: TPageControl;
@@ -93,6 +91,7 @@ type
     CdsArqImportadosdata_importacao: TSQLTimeStampField;
     fmtbcdfldCdsArqImportadosqtde_registros: TFMTBCDField;
     intgrfldCdsArqImportadoscaminho_arquivo_id: TIntegerField;
+    tmrDispImport: TTimer;
     procedure btnAbrirPgtoClick(Sender: TObject);
     procedure btnImportarClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
@@ -106,7 +105,6 @@ type
     procedure btnImpObservacoesClick(Sender: TObject);
     procedure btnAbrHonorariosClick(Sender: TObject);
     procedure btnImpHonorariosClick(Sender: TObject);
-    procedure btn1Click(Sender: TObject);
     procedure btnSalvarPathClick(Sender: TObject);
     procedure btnAbrirDiariasClick(Sender: TObject);
     procedure btnAbrirFornecedoresClick(Sender: TObject);
@@ -116,18 +114,27 @@ type
     procedure CdsCaminhoAfterPost(DataSet: TDataSet);
     procedure CdsCaminhoAfterInsert(DataSet: TDataSet);
     procedure dbedtcaminhoDblClick(Sender: TObject);
+    procedure tmrDispImportTimer(Sender: TObject);
+    procedure btnImportClick(Sender: TObject);
+    procedure atualizaCaminhos;
+    procedure btn2Click(Sender: TObject);
   private
     { Private declarations }
+    FIsImport: Boolean;
   public
     { Public declarations }
+
   end;
 
 var
   FrmImportCsv: TFrmImportCsv;
+  FListaThrad:   TObjectList;
 
 implementation
 
 {$R *.dfm}
+
+uses UntImportacaoArquivos;
 
 procedure TFrmImportCsv.btnImpHonorariosClick(Sender: TObject);
 begin
@@ -139,9 +146,24 @@ begin
   ImportArqCsv('honorarios_servidores',edtHonorarios.Text);
 end;
 
-procedure TFrmImportCsv.btn1Click(Sender: TObject);
+procedure TFrmImportCsv.atualizaCaminhos;
 begin
-  fllstAux.ApplyFilePath('c:\');
+  {}
+end;
+
+procedure TFrmImportCsv.btn2Click(Sender: TObject);
+var
+  i : Integer;
+begin
+  FIsImport             := False;
+  tmrDispImport.Enabled := False;
+
+  for I := 0 to FListaThrad.Count do
+  begin
+    if Assigned(FListaThrad[i]) then
+      TThreadImportCsv(FListaThrad[i]).Terminate;
+  end;
+
 end;
 
 procedure TFrmImportCsv.btnAbrHonorariosClick(Sender: TObject);
@@ -217,12 +239,12 @@ var
   LPosiTAbAnt : Integer;
   LLinIns     : string;
   LErros      : TStringList;
-  Trans       : TTransactionDesc;  
-  
+  Trans       : TTransactionDesc;
+
 begin
   LErros := TStringList.Create;
   LErros.Add('Logando erros de importação');
- 
+
   AssignFile(LCVSFile, EdtPagamentos.Text);
   Reset(LCVSFile);
   LQtTab :=0;
@@ -233,7 +255,7 @@ begin
     ReadLn(LCVSFile, LLinha);
     LQtTab      := 0;
     LPosiTAbAnt := 0;
-    
+
     if (i <> 0) then
     begin
 
@@ -247,25 +269,25 @@ begin
 
           if ( LPosiTAbAnt = 0)    then
             LLinIns := LLinIns + QuotedStr(Copy(LLinha, LPosiTAbAnt   , j-1)) + ','
-          else 
+          else
           if ( j = Length(LLinha)) then
             LLinIns := LLinIns + QuotedStr(Copy(LLinha, LPosiTAbAnt+1 , j-LPosiTAbAnt))
           else
-            LLinIns := LLinIns + QuotedStr(Copy(LLinha, LPosiTAbAnt+1 , j-1-LPosiTAbAnt)) + ',';            
-            
-          LPosiTAbAnt := j;             
+            LLinIns := LLinIns + QuotedStr(Copy(LLinha, LPosiTAbAnt+1 , j-1-LPosiTAbAnt)) + ',';
+
+          LPosiTAbAnt := j;
         end;
       end;
       try
         Trans.TransactionID := 1;
         Trans.IsolationLevel := xilREADCOMMITTED;
         SQLConnection1.StartTransaction( Trans );
-   
+
         sqlqryIns.SQL.Clear;
         sqlqryIns.SQL.Text :=
           'INSERT INTO "despesas_gastos_diretos" '
-            + ' VALUES ( default, ' + LLinIns + ' )'; 
-    
+            + ' VALUES ( default, ' + LLinIns + ' )';
+
 //        ShowMessage(IntToStr(i)+ '  - ' + sqlqryIns.SQL.Text);
         sqlqryIns.ExecSQL;
         SQLConnection1.Commit(Trans);
@@ -278,12 +300,12 @@ begin
 
       end;
 
-      LLinIns := '';      
+      LLinIns := '';
     end;
     Inc(i);
 
   end;
-    
+
   LErros.SaveToFile('ErrosImport.txt');
   // Close the file for the last time
   CloseFile(LCVSFile);
@@ -293,6 +315,12 @@ begin
 
   FreeAndNil(LErros);
 
+end;
+
+procedure TFrmImportCsv.btnImportClick(Sender: TObject);
+begin
+  FIsImport             := True;
+  tmrDispImport.Enabled := True;
 end;
 
 procedure TFrmImportCsv.btnBtnImportarServClick(Sender: TObject);
@@ -395,6 +423,8 @@ begin
   LoadEdits;
   sqldtstCaminho.Open;
   CdsCaminho.Open;
+  FIsImport:= False;
+  FListaThrad := TObjectList.Create;
 
 end;
 
@@ -532,4 +562,54 @@ end;
 
 
 
+procedure TFrmImportCsv.tmrDispImportTimer(Sender: TObject);
+var
+  LIsTemImport      : Boolean;
+  LListaArquivos : TFileListBox;
+  i : Integer;
+  LThreadImport: TThreadImportCsv;
+begin
+
+  LIsTemImport := False;
+  for I := 0 to FListaThrad.Count do
+  begin
+    if Assigned(FListaThrad[i]) then
+      LIsTemImport := TThreadImportCsv(FListaThrad[i]).Started;
+    if LIsTemImport then Break;
+  end;
+
+  if FIsImport and not LIsTemImport then
+  begin
+    atualizaCaminhos;
+    while (not sqlqryIns.Eof) do
+    begin
+      if (sqlqryIns.FieldByName('ativado').AsString = 'T') then
+      begin
+        LListaArquivos := TFileListBox.Create(Self);
+        LListaArquivos.Mask := '*.csv';
+        LListaArquivos.ApplyFilePath(sqlqryIns.FieldByName('caminho').AsString);
+        for i := 0 to LListaArquivos.Items.Count do
+        begin
+          LThreadImport := TThreadImportCsv.create(False);
+          LThreadImport.CaminhoId := sqlqryIns.FieldByName('id').AsInteger;
+          LThreadImport.Arquivo   := sqlqryIns.FieldByName('caminho').AsString + '\' +  LListaArquivos.Items[i];
+          LThreadImport.TabDestino:= sqlqryIns.FieldByName('tabela_destino').AsString;
+          LThreadImport.Conn      := SQLConnection1.CloneConnection;
+          FListaThrad.Add(LThreadImport);
+        end;
+      end;
+      sqlqryIns.Next;
+    end;
+
+  end;
+
+  for I := 0 to FListaThrad.Count do
+  begin
+    if Assigned(FListaThrad[i]) then
+      TThreadImportCsv(FListaThrad[i]).Execute;
+  end;
+
+end;
+
 end.
+

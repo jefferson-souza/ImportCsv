@@ -58,6 +58,7 @@ procedure TThreadImportCsv.ConfigureThread;
 begin
   FQrAux   := TSQLQuery.Create(nil);
   FQrAux.SQLConnection := FConn;
+  FreeOnTerminate := True;
 end;
 
 procedure TThreadImportCsv.Execute;
@@ -67,6 +68,7 @@ begin
   ConfigureThread;
   GravaArquivoImportado;
   ImportArquivo;
+  Self.Terminate;
 
 end;
 
@@ -169,7 +171,7 @@ begin
         IniciaQuery;
         FQrAux.SQL.Text :=
           'INSERT INTO "'+FTabDestino+'" '
-            + ' VALUES ( default, ' + LLinIns + ' )';
+            + ' VALUES ( default,' + QuotedStr(IntToStr(FArqId)) + ' ,' + LLinIns + ' )';
 
         FQrAux.ExecSQL;
         FConn.Commit(Trans);
