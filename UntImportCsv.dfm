@@ -52,7 +52,7 @@ object FrmImportCsv: TFrmImportCsv
     Top = 61
     Width = 712
     Height = 300
-    ActivePage = tsArqImportados
+    ActivePage = ts3
     TabOrder = 3
     object tsDespesas: TTabSheet
       Caption = 'Despesas'
@@ -527,7 +527,7 @@ object FrmImportCsv: TFrmImportCsv
       'User_Name=postgres'
       'Password=admin')
     Connected = True
-    Left = 680
+    Left = 544
     Top = 8
   end
   object dtstprvdrCaminho: TDataSetProvider
@@ -554,6 +554,7 @@ object FrmImportCsv: TFrmImportCsv
     Top = 400
   end
   object CdsArqImportados: TClientDataSet
+    Active = True
     Aggregates = <>
     Params = <>
     ProviderName = 'dtstprvdrArqImportados'
@@ -630,7 +631,7 @@ object FrmImportCsv: TFrmImportCsv
     MaxBlobSize = -1
     Params = <>
     SQLConnection = SQLConnection1
-    Left = 112
+    Left = 120
     Top = 360
     object intgrfldTeste1id: TIntegerField
       AutoGenerateValue = arAutoInc
@@ -654,6 +655,7 @@ object FrmImportCsv: TFrmImportCsv
   end
   object sqldtstArqImportados: TSQLDataSet
     SchemaName = 'postgres'
+    Active = True
     CommandText = 
       'select * from "arquivos_importados"  order by  "data_importacao"' +
       ' limit 200'
@@ -689,5 +691,31 @@ object FrmImportCsv: TFrmImportCsv
     OnTimer = tmrDispImportTimer
     Left = 648
     Top = 48
+  end
+  object sqlqryCaminhos: TSQLQuery
+    MaxBlobSize = -1
+    Params = <>
+    SQL.Strings = (
+      'select * from caminho_arquivos where ativado = '#39'T'#39)
+    SQLConnection = SQLConnection1
+    Left = 712
+    Top = 48
+    object sqlqryCaminhosid: TIntegerField
+      FieldName = 'id'
+      Required = True
+    end
+    object sqlqryCaminhoscaminho: TWideStringField
+      FieldName = 'caminho'
+      Size = 200
+    end
+    object sqlqryCaminhosativado: TWideStringField
+      FieldName = 'ativado'
+      FixedChar = True
+      Size = 1
+    end
+    object sqlqryCaminhostabela_destino: TWideStringField
+      FieldName = 'tabela_destino'
+      Size = 200
+    end
   end
 end

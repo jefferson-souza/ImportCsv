@@ -92,6 +92,11 @@ type
     fmtbcdfldCdsArqImportadosqtde_registros: TFMTBCDField;
     intgrfldCdsArqImportadoscaminho_arquivo_id: TIntegerField;
     tmrDispImport: TTimer;
+    sqlqryCaminhos: TSQLQuery;
+    sqlqryCaminhosid: TIntegerField;
+    sqlqryCaminhoscaminho: TWideStringField;
+    sqlqryCaminhosativado: TWideStringField;
+    sqlqryCaminhostabela_destino: TWideStringField;
     procedure btnAbrirPgtoClick(Sender: TObject);
     procedure btnImportarClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
@@ -148,7 +153,8 @@ end;
 
 procedure TFrmImportCsv.atualizaCaminhos;
 begin
-  {}
+  sqlqryCaminhos.Close;
+  sqlqryCaminhos.Open;
 end;
 
 procedure TFrmImportCsv.btn2Click(Sender: TObject);
@@ -158,10 +164,13 @@ begin
   FIsImport             := False;
   tmrDispImport.Enabled := False;
 
-  for I := 0 to FListaThrad.Count do
+  for I := 0 to FListaThrad.Count - 1 do
   begin
     if Assigned(FListaThrad[i]) then
-      TThreadImportCsv(FListaThrad[i]).Terminate;
+    begin
+//      TThreadImportCsv(FListaThrad[i]).Terminate;
+      FListaThrad.Remove(FListaThrad[i]);
+    end;
   end;
 
 end;
@@ -565,49 +574,54 @@ end;
 procedure TFrmImportCsv.tmrDispImportTimer(Sender: TObject);
 var
   LIsTemImport      : Boolean;
-  LListaArquivos : TFileListBox;
   i : Integer;
   LThreadImport: TThreadImportCsv;
+
+  j          : Integer;
+  LSearchRec : TSearchRec;
 begin
 
   LIsTemImport := False;
-  for I := 0 to FListaThrad.Count do
+  for I := 0 to FListaThrad.Count - 1 do
   begin
-    if Assigned(FListaThrad[i]) then
+    if (FListaThrad.Count > 0) and Assigned(FListaThrad[i]) then
       LIsTemImport := TThreadImportCsv(FListaThrad[i]).Started;
     if LIsTemImport then Break;
   end;
 
   if FIsImport and not LIsTemImport then
   begin
+    FIsImport := False;
     atualizaCaminhos;
-    while (not sqlqryIns.Eof) do
+    while (not sqlqryCaminhos.Eof) do
     begin
-      if (sqlqryIns.FieldByName('ativado').AsString = 'T') then
+      if (sqlqryCaminhos.FieldByName('ativado').AsString = 'T') then
       begin
-        LListaArquivos := TFileListBox.Create(Self);
-        LListaArquivos.Mask := '*.csv';
-        LListaArquivos.ApplyFilePath(sqlqryIns.FieldByName('caminho').AsString);
-        for i := 0 to LListaArquivos.Items.Count do
+        i := FindFirst(sqlqryCaminhos.FieldByName('caminho').AsString + '\' + '*.csv', 0, LSearchRec);
+        while i = 0 do
         begin
           LThreadImport := TThreadImportCsv.create(False);
-          LThreadImport.CaminhoId := sqlqryIns.FieldByName('id').AsInteger;
-          LThreadImport.Arquivo   := sqlqryIns.FieldByName('caminho').AsString + '\' +  LListaArquivos.Items[i];
-          LThreadImport.TabDestino:= sqlqryIns.FieldByName('tabela_destino').AsString;
-          LThreadImport.Conn      := SQLConnection1.CloneConnection;
+          LThreadImport.Conn      := SQLConnection1;
+          LThreadImport.CaminhoId := sqlqryCaminhos.FieldByName('id').AsInteger;
+          LThreadImport.Arquivo   := sqlqryCaminhos.FieldByName('caminho').AsString + '\' +  LSearchRec.Name;
+          LThreadImport.TabDestino:= sqlqryCaminhos.FieldByName('tabela_destino').AsString;
           FListaThrad.Add(LThreadImport);
+          i := FindNext(LSearchRec);
         end;
       end;
-      sqlqryIns.Next;
+      sqlqryCaminhos.Next;
     end;
 
+
   end;
 
-  for I := 0 to FListaThrad.Count do
+  for I := 0 to FListaThrad.Count - 1 do
   begin
-    if Assigned(FListaThrad[i]) then
+    if Assigned(FListaThrad[i]) and not TThreadImportCsv(FListaThrad[i]).Started then
       TThreadImportCsv(FListaThrad[i]).Execute;
   end;
+
+
 
 end;
 
