@@ -15,18 +15,21 @@ type
       FArqId      : Integer;
       FCaminhoId  : Integer;
       FErros      : TStringList;
+      FIsExecutando  : Boolean;
 
       procedure ImportArquivo;
       procedure ConfigureThread;
       procedure GravaArquivoImportado;
       procedure IniciaQuery(AQuery: TSQLQuery);
       procedure MoverArquivo(Origem, Destino,Arquivo: String);
+
     public
-     procedure Execute; override;
      property CaminhoId  : Integer read FCaminhoId write FCaminhoId;
      property Arquivo    : string  read FArquivo write FArquivo;
      property TabDestino : string  read FTabDestino write FTabDestino;
      property Conn       : TSQLConnection write FConn;
+     constructor Create(aConn: TSQLConnection); overload;
+     procedure Execute; override;
 
   end;
 
@@ -38,23 +41,37 @@ implementation
 { TFrmImportCsv }
 procedure TThreadImportCsv.ConfigureThread;
 begin
+  FreeOnTerminate := True;
+
+  FErros := TStringList.Create;
+end;
+
+constructor TThreadImportCsv.Create(aConn: TSQLConnection);
+begin
+  inherited Create(False);
+  FConn    := aConn.CloneConnection;
   FQrAux   := TSQLQuery.Create(nil);
   FQrAux.SQLConnection := FConn;
-  FreeOnTerminate := True;
-  FErros := TStringList.Create;
+  ConfigureThread;
 end;
 
 procedure TThreadImportCsv.Execute;
 begin
-  inherited;
-
   while not Terminated do
   begin
+    sleep(50);
     try
       try
         Application.ProcessMessages;
-        ConfigureThread;
 
+        while not FConn.Connected do
+        begin
+          try
+            FConn.Open;
+          except
+            Sleep(100);
+          end;
+        end;
 
         EnterCriticalSection(ControleId);
         GravaArquivoImportado;
@@ -130,8 +147,8 @@ begin
   Reset(LCVSFile);
   i:= 0;
 
-  while not Eof(LCVSFile) do
-//  while (i < 10000) do
+//  while not Eof(LCVSFile) do
+  while (i < 10000) do
   begin
     ReadLn(LCVSFile, LLinha);
     LPosiTAbAnt := 0;

@@ -1,2 +1,3 @@
 Logando dados de importação para arquivo: D:\Dados_Portal_Transparencia\Servidores\Honorarios\20140131_Honorarios(Jetons).csv
+Logando dados de importação para arquivo: D:\Dados_Portal_Transparencia\Servidores\Honorarios\20140131_Honorarios(Jetons).csv
 Erro: Arquivo "D:\Dados_Portal_Transparencia\Servidores\Honorarios\20140131_Honorarios(Jetons).csv" Já Importado

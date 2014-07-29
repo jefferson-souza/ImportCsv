@@ -424,6 +424,8 @@ begin
   sqlqryIns.Close;
   sqldtstCaminho.Close;
   CdsCaminho.Close;
+  sqldtstArqImportados.Active := False;
+  CdsArqImportados.Active := False;
 end;
 
 procedure TFrmImportCsv.FormShow(Sender: TObject);
@@ -432,6 +434,9 @@ begin
   LoadEdits;
   sqldtstCaminho.Open;
   CdsCaminho.Open;
+
+  sqldtstArqImportados.Active := True;
+  CdsArqImportados.Active := True;
   FIsImport:= False;
   FListaThrad := TObjectList.Create;
 
@@ -600,12 +605,12 @@ begin
         i := FindFirst(sqlqryCaminhos.FieldByName('caminho').AsString + '\' + '*.csv', 0, LSearchRec);
         while i = 0 do
         begin
-          LThreadImport := TThreadImportCsv.create(False);
-          LThreadImport.Conn      := SQLConnection1;
+          LThreadImport := TThreadImportCsv.create(SQLConnection1);
           LThreadImport.CaminhoId := sqlqryCaminhos.FieldByName('id').AsInteger;
           LThreadImport.Arquivo   := sqlqryCaminhos.FieldByName('caminho').AsString + '\' +  LSearchRec.Name;
           LThreadImport.TabDestino:= sqlqryCaminhos.FieldByName('tabela_destino').AsString;
           FListaThrad.Add(LThreadImport);
+          LThreadImport.Execute;
           i := FindNext(LSearchRec);
         end;
       end;
@@ -615,11 +620,11 @@ begin
 
   end;
 
-  for I := 0 to FListaThrad.Count - 1 do
-  begin
-    if Assigned(FListaThrad[i]) and not TThreadImportCsv(FListaThrad[i]).Started then
-      TThreadImportCsv(FListaThrad[i]).Execute;
-  end;
+//  for I := 0 to FListaThrad.Count - 1 do
+//  begin
+//    if Assigned(FListaThrad[i]) and not TThreadImportCsv(FListaThrad[i]).e then
+//      TThreadImportCsv(FListaThrad[i]).Execute;
+//  end;
 
 
 

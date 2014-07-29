@@ -84,7 +84,6 @@
         </DelphiCompile>
         <DCCReference Include="UntImportCsv.pas">
             <Form>FrmImportCsv</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="UntImportacaoArquivos.pas"/>
         <BuildConfiguration Include="Release">
