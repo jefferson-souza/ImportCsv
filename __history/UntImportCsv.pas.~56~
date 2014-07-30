@@ -213,17 +213,11 @@ begin
   txtQtdArqImportando.Caption := '0 - Arquivos Sendo Importados';
 
   sqlqryIns.close;
-  sqlqryIns.SQL.Clear;
+  sqlqryIns.
+  SELECT tablename FROM pg_catalog.pg_tables
+ WHERE schemaname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+ ORDER BY schemaname, tablename
 
-  sqlqryIns.SQL.add(  'SELECT tablename FROM pg_catalog.pg_tables '
-                      +   'WHERE schemaname NOT IN ( "pg_catalog", "information_schema", "pg_toast") '
-                      +   ' ORDER BY tablename' );
-  sqlqryIns.Open;
-  while not sqlqryIns.EOF do
-  begin
-     //
-
-  end;
 end;
 
 procedure TFrmImportCsv.tmrDispImportTimer(Sender: TObject);

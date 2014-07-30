@@ -3,7 +3,8 @@ unit UntImportacaoArquivos;
 interface
 
 uses
-  System.Classes, Windows , Data.DBXOdbc, Data.SqlExpr, System.SysUtils, Vcl.Dialogs, Vcl.Forms;
+  System.Classes, Windows , Data.DBXOdbc, Data.SqlExpr, System.SysUtils,
+  Vcl.Dialogs, Vcl.Forms, System.Win.ComObj;
 
 type
   TThreadImportCsv = class( TThread)
@@ -15,18 +16,26 @@ type
       FArqId      : Integer;
       FCaminhoId  : Integer;
       FErros      : TStringList;
+      FTerminado    : Boolean;
+
 
       procedure ImportArquivo;
       procedure ConfigureThread;
       procedure GravaArquivoImportado;
       procedure IniciaQuery(AQuery: TSQLQuery);
       procedure MoverArquivo(Origem, Destino,Arquivo: String);
+      procedure CriaDirImportacao;
+
     public
-     procedure Execute; override;
      property CaminhoId  : Integer read FCaminhoId write FCaminhoId;
      property Arquivo    : string  read FArquivo write FArquivo;
      property TabDestino : string  read FTabDestino write FTabDestino;
      property Conn       : TSQLConnection write FConn;
+     property Terminado  : Boolean read FTerminado write FTerminado;
+     constructor Create(aConn: TSQLConnection); overload;
+     destructor Destroy; override;
+     procedure Execute; override;
+
 
   end;
 
@@ -38,39 +47,76 @@ implementation
 { TFrmImportCsv }
 procedure TThreadImportCsv.ConfigureThread;
 begin
+//  FreeOnTerminate := True;
+
+  FErros := TStringList.Create;
+end;
+
+constructor TThreadImportCsv.Create(aConn: TSQLConnection);
+begin
+  inherited Create(True);
+  Terminado:= False;
+  FConn    := aConn.CloneConnection;
   FQrAux   := TSQLQuery.Create(nil);
   FQrAux.SQLConnection := FConn;
-  FreeOnTerminate := True;
-  FErros := TStringList.Create;
+  ConfigureThread;
+end;
+
+procedure TThreadImportCsv.CriaDirImportacao;
+begin
+  if not DirectoryExists(ExtractFileDir(Arquivo)+'\Import') then
+    ForceDirectories(ExtractFileDir(Arquivo)+'\Import');
+end;
+
+destructor TThreadImportCsv.Destroy;
+begin
+  FreeAndNil(FErros);
+  FreeAndNil(FQrAux);
+
+  inherited;
 end;
 
 procedure TThreadImportCsv.Execute;
 begin
   inherited;
-  try
+
+  while not Terminated do
+  begin
+    sleep(50);
     try
-      Application.ProcessMessages;
-      ConfigureThread;
+      try
+        Application.ProcessMessages;
 
+        while not FConn.Connected do
+        begin
+          try
+            FConn.Open;
+          except
+            Sleep(100);
+          end;
+        end;
 
-      EnterCriticalSection(ControleId);
-      GravaArquivoImportado;
-      LeaveCriticalSection(ControleId);
+        EnterCriticalSection(ControleId);
+        GravaArquivoImportado;
+        LeaveCriticalSection(ControleId);
 
-      ImportArquivo;
-    except
-      on E: Exception do
-      begin
-        FErros.Add('Erro: ' + e.Message );
+        CriaDirImportacao;
+
+        ImportArquivo;
+      except
+        on E: Exception do
+        begin
+          FErros.Add('Erro: ' + e.Message );
+        end;
+
       end;
 
+    finally
+      FErros.SaveToFile('ErrosImport ' + ExtractFileName(FArquivo) +'.txt');
+      Terminate;
+      WaitForSingleObject(Self.Handle,3000);
+      Terminado := True;
     end;
-
-  finally
-    FErros.SaveToFile('ErrosImport ' + ExtractFileName(FArquivo) +'.txt');
-
-    FreeAndNil(FErros);
-    Self.Terminate;
   end;
 
 
@@ -84,11 +130,15 @@ begin
   LQrAux := TSQLQuery.Create(nil);
   LQrAux.SQLConnection := FConn;
 
-  LQrAux.SQL.Add('select 1 from arquivos_importados where nome = ' + QuotedStr(FArquivo) );
+  LQrAux.SQL.Add('select id from arquivos_importados where nome = ' + QuotedStr(FArquivo) );
   LQrAux.Open;
 
   if not LQrAux.IsEmpty then
+  begin
+    RenameFile(FArquivo,  ExtractFileDir(FArquivo) + '\' + LQrAux.FieldByName('id').AsString + '_' + ExtractFileName(FArquivo) );
+    MoverArquivo(ExtractFileDir(FArquivo), ExtractFileDir(FArquivo) + '\Import', LQrAux.FieldByName('id').AsString + '_' + ExtractFileName(FArquivo) );
     raise Exception.Create('Arquivo "' + FArquivo + '" Já Importado');
+  end;
 
   IniciaQuery(LQrAux);
 
@@ -126,8 +176,8 @@ begin
   Reset(LCVSFile);
   i:= 0;
 
-//  while not Eof(LCVSFile) do
-  while (i < 100) do
+  while not Eof(LCVSFile) do
+//  while (i < 10000) do
   begin
     ReadLn(LCVSFile, LLinha);
     LPosiTAbAnt := 0;
@@ -221,7 +271,6 @@ begin
   // Close the file for the last time
   CloseFile(LCVSFile);
   MoverArquivo(ExtractFileDir(FArquivo), ExtractFileDir(FArquivo) + '\Import', ExtractFileName(FArquivo) );
-
 
 end;
 

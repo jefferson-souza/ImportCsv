@@ -24,6 +24,7 @@ type
       procedure GravaArquivoImportado;
       procedure IniciaQuery(AQuery: TSQLQuery);
       procedure MoverArquivo(Origem, Destino,Arquivo: String);
+      procedure CriaDirImportacao;
 
     public
      property CaminhoId  : Integer read FCaminhoId write FCaminhoId;
@@ -32,7 +33,9 @@ type
      property Conn       : TSQLConnection write FConn;
      property Terminado  : Boolean read FTerminado write FTerminado;
      constructor Create(aConn: TSQLConnection); overload;
+     destructor Destroy; override;
      procedure Execute; override;
+
 
   end;
 
@@ -59,6 +62,20 @@ begin
   ConfigureThread;
 end;
 
+procedure TThreadImportCsv.CriaDirImportacao;
+begin
+  if not DirectoryExists(ExtractFileDir(Arquivo)+'\Import') then
+    ForceDirectories(ExtractFileDir(Arquivo)+'\Import');
+end;
+
+destructor TThreadImportCsv.Destroy;
+begin
+  FreeAndNil(FErros);
+  FreeAndNil(FQrAux);
+
+  inherited;
+end;
+
 procedure TThreadImportCsv.Execute;
 begin
   inherited;
@@ -83,6 +100,8 @@ begin
         GravaArquivoImportado;
         LeaveCriticalSection(ControleId);
 
+        CriaDirImportacao;
+
         ImportArquivo;
       except
         on E: Exception do
@@ -94,8 +113,6 @@ begin
 
     finally
       FErros.SaveToFile('ErrosImport ' + ExtractFileName(FArquivo) +'.txt');
-
-      FreeAndNil(FErros);
       Terminate;
       WaitForSingleObject(Self.Handle,3000);
       Terminado := True;
@@ -221,20 +238,20 @@ begin
 
         IniciaQuery(FQrAux);
 
-        EnterCriticalSection(ControleGravacao);
+//        EnterCriticalSection(ControleGravacao);
         FQrAux.SQL.Text :=
           'INSERT INTO "'+FTabDestino+'" '
             + ' VALUES ( default,' + QuotedStr(IntToStr(FArqId)) + ' ,' + LLinIns + ' )';
 
         FQrAux.ExecSQL;
         FConn.Commit(Trans);
-        LeaveCriticalSection(ControleGravacao);
+//        LeaveCriticalSection(ControleGravacao);
       except
         on E: Exception do
         begin
           FErros.Add(e.Message + ' - Linha:' + IntToStr(i) + ' SQL:' + FQrAux.SQL.Text);
           FConn.Rollback(Trans);
-          LeaveCriticalSection(ControleGravacao);
+//          LeaveCriticalSection(ControleGravacao);
         end;
 
       end;
@@ -245,16 +262,15 @@ begin
 
   end;
 
-  EnterCriticalSection(ControleGravacao);
+//  EnterCriticalSection(ControleGravacao);
   IniciaQuery(FQrAux);
   FQrAux.SQL.Add('update arquivos_importados set qtde_registros = ' + QuotedStr(IntToStr(i - 1)) + ' where id = ' + QuotedStr(IntToStr(FArqId)) );
   FQrAux.ExecSQL;
-  LeaveCriticalSection(ControleGravacao);
+//  LeaveCriticalSection(ControleGravacao);
 
   // Close the file for the last time
   CloseFile(LCVSFile);
   MoverArquivo(ExtractFileDir(FArquivo), ExtractFileDir(FArquivo) + '\Import', ExtractFileName(FArquivo) );
-
 
 end;
 

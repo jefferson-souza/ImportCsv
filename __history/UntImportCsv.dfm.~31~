@@ -2,7 +2,7 @@ object FrmImportCsv: TFrmImportCsv
   Left = 0
   Top = 0
   Caption = 'Importador de Arquivos CSV - Portal da Transpar'#234'ncia'
-  ClientHeight = 430
+  ClientHeight = 425
   ClientWidth = 926
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -29,48 +29,31 @@ object FrmImportCsv: TFrmImportCsv
     ParentFont = False
     TabOrder = 0
   end
-  object fllstAux: TFileListBox
-    Left = 768
-    Top = 200
-    Width = 145
-    Height = 97
-    ItemHeight = 13
-    Mask = '*.dll'
-    TabOrder = 1
-  end
-  object btn1: TButton
-    Left = 768
-    Top = 303
-    Width = 75
-    Height = 25
-    Caption = 'btn1'
-    TabOrder = 2
-    OnClick = btn1Click
-  end
   object btnSalvarPath: TButton
     Left = 393
     Top = 367
     Width = 75
     Height = 25
     Caption = 'Salvar'
-    TabOrder = 3
+    TabOrder = 1
     OnClick = btnSalvarPathClick
   end
   object btnImport: TButton
-    Left = 476
+    Left = 474
     Top = 367
     Width = 75
     Height = 25
     Caption = 'Importar'
-    TabOrder = 4
+    TabOrder = 2
+    OnClick = btnImportClick
   end
   object pgc1: TPageControl
     Left = 25
     Top = 61
     Width = 712
     Height = 300
-    ActivePage = tsArqImportados
-    TabOrder = 5
+    ActivePage = ts3
+    TabOrder = 3
     object tsDespesas: TTabSheet
       Caption = 'Despesas'
       object grp1: TGroupBox
@@ -508,7 +491,8 @@ object FrmImportCsv: TFrmImportCsv
     Width = 75
     Height = 25
     Caption = 'Parar'
-    TabOrder = 6
+    TabOrder = 4
+    OnClick = btn2Click
   end
   object btn3: TButton
     Left = 643
@@ -516,7 +500,7 @@ object FrmImportCsv: TFrmImportCsv
     Width = 75
     Height = 25
     Caption = 'Para Tray'
-    TabOrder = 7
+    TabOrder = 5
   end
   object SQLConnection1: TSQLConnection
     ConnectionName = 'PostgreSQLUfpb'
@@ -543,67 +527,64 @@ object FrmImportCsv: TFrmImportCsv
       'User_Name=postgres'
       'Password=admin')
     Connected = True
-    Left = 680
+    Left = 544
     Top = 8
   end
   object dtstprvdrCaminho: TDataSetProvider
     DataSet = sqldtstCaminho
     Options = [poAllowMultiRecordUpdates, poAutoRefresh, poUseQuoteChar]
-    Left = 808
-    Top = 64
+    Left = 152
+    Top = 360
   end
   object dsCaminho: TDataSource
     DataSet = CdsCaminho
-    Left = 872
-    Top = 64
-  end
-  object sqlqryQrArqImportados: TSQLQuery
-    MaxBlobSize = -1
-    Params = <>
-    SQL.Strings = (
-      'select *'
-      'from "arquivos_importados"'
-      'order by data_importacao desc'
-      'limit 100')
-    SQLConnection = SQLConnection1
-    Left = 776
-    Top = 152
-    object intgrfldInsQrArqImportadosid: TIntegerField
-      FieldName = 'id'
-      Required = True
-    end
-    object wdstrngfldInsQrArqImportadosnome: TWideStringField
-      FieldName = 'nome'
-      Size = 200
-    end
-    object sqlqryQrArqImportadosdata_importacao: TSQLTimeStampField
-      FieldName = 'data_importacao'
-    end
-    object fmtbcdfldInsQrArqImportadosqtde_registros: TFMTBCDField
-      FieldName = 'qtde_registros'
-      Precision = 10
-      Size = 0
-    end
+    Left = 216
+    Top = 360
   end
   object dsArqImportados: TDataSource
     DataSet = CdsArqImportados
-    Left = 872
-    Top = 152
+    Left = 216
+    Top = 400
   end
   object dtstprvdrArqImportados: TDataSetProvider
-    DataSet = sqlqryQrArqImportados
+    DataSet = sqldtstArqImportados
     ResolveToDataSet = True
     Options = [poReadOnly, poUseQuoteChar]
-    Left = 808
-    Top = 152
+    Left = 152
+    Top = 400
   end
   object CdsArqImportados: TClientDataSet
     Active = True
     Aggregates = <>
     Params = <>
     ProviderName = 'dtstprvdrArqImportados'
-    Left = 840
-    Top = 152
+    Left = 184
+    Top = 400
+    object intgrfldCdsArqImportadosid: TIntegerField
+      FieldName = 'id'
+      KeyFields = 'id'
+      ReadOnly = True
+      Required = True
+    end
+    object wdstrngfldCdsArqImportadosnome: TWideStringField
+      FieldName = 'nome'
+      ReadOnly = True
+      Size = 200
+    end
+    object CdsArqImportadosdata_importacao: TSQLTimeStampField
+      FieldName = 'data_importacao'
+      ReadOnly = True
+    end
+    object fmtbcdfldCdsArqImportadosqtde_registros: TFMTBCDField
+      FieldName = 'qtde_registros'
+      ReadOnly = True
+      Precision = 10
+      Size = 0
+    end
+    object intgrfldCdsArqImportadoscaminho_arquivo_id: TIntegerField
+      FieldName = 'caminho_arquivo_id'
+      ReadOnly = True
+    end
   end
   object OpenDialog1: TOpenDialog
     Left = 544
@@ -622,8 +603,8 @@ object FrmImportCsv: TFrmImportCsv
     ProviderName = 'dtstprvdrCaminho'
     AfterInsert = CdsCaminhoAfterInsert
     AfterPost = CdsCaminhoAfterPost
-    Left = 840
-    Top = 64
+    Left = 184
+    Top = 360
     object intgrfldCdsArqImportid: TIntegerField
       AutoGenerateValue = arAutoInc
       FieldName = 'id'
@@ -646,12 +627,12 @@ object FrmImportCsv: TFrmImportCsv
   end
   object sqldtstCaminho: TSQLDataSet
     SchemaName = 'postgres'
-    CommandText = 'select * from "caminho_arquivo"  order by id limit 200'
+    CommandText = 'select * from "caminho_arquivos"  order by id limit 200'
     MaxBlobSize = -1
     Params = <>
     SQLConnection = SQLConnection1
-    Left = 768
-    Top = 64
+    Left = 120
+    Top = 360
     object intgrfldTeste1id: TIntegerField
       AutoGenerateValue = arAutoInc
       FieldName = 'id'
@@ -668,6 +649,71 @@ object FrmImportCsv: TFrmImportCsv
       Size = 1
     end
     object wdstrngfldTeste1tabela_destino: TWideStringField
+      FieldName = 'tabela_destino'
+      Size = 200
+    end
+  end
+  object sqldtstArqImportados: TSQLDataSet
+    SchemaName = 'postgres'
+    Active = True
+    CommandText = 
+      'select * from "arquivos_importados"  order by  "data_importacao"' +
+      ' limit 200'
+    MaxBlobSize = -1
+    Params = <>
+    SQLConnection = SQLConnection1
+    Left = 120
+    Top = 400
+    object intgrfldArqImportadosid: TIntegerField
+      FieldName = 'id'
+      KeyFields = 'caminho_arquivo_id'
+      Required = True
+    end
+    object intgrfldArqImportadoscaminho_arquivo_id: TIntegerField
+      FieldName = 'caminho_arquivo_id'
+    end
+    object wdstrngfldArqImportadosnome: TWideStringField
+      FieldName = 'nome'
+      Size = 200
+    end
+    object sqldtstArqImportadosdata_importacao: TSQLTimeStampField
+      FieldName = 'data_importacao'
+    end
+    object fmtbcdfldArqImportadosqtde_registros: TFMTBCDField
+      FieldName = 'qtde_registros'
+      Precision = 10
+      Size = 0
+    end
+  end
+  object tmrDispImport: TTimer
+    Enabled = False
+    Interval = 10000
+    OnTimer = tmrDispImportTimer
+    Left = 648
+    Top = 48
+  end
+  object sqlqryCaminhos: TSQLQuery
+    MaxBlobSize = -1
+    Params = <>
+    SQL.Strings = (
+      'select * from caminho_arquivos where ativado = '#39'T'#39)
+    SQLConnection = SQLConnection1
+    Left = 712
+    Top = 48
+    object sqlqryCaminhosid: TIntegerField
+      FieldName = 'id'
+      Required = True
+    end
+    object sqlqryCaminhoscaminho: TWideStringField
+      FieldName = 'caminho'
+      Size = 200
+    end
+    object sqlqryCaminhosativado: TWideStringField
+      FieldName = 'ativado'
+      FixedChar = True
+      Size = 1
+    end
+    object sqlqryCaminhostabela_destino: TWideStringField
       FieldName = 'tabela_destino'
       Size = 200
     end
