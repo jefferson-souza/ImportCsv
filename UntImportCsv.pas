@@ -125,7 +125,7 @@ type
     procedure btn2Click(Sender: TObject);
   private
     { Private declarations }
-    FIsImport: Boolean;
+    FIsPodeImportar: Boolean;
   public
     { Public declarations }
 
@@ -161,7 +161,7 @@ procedure TFrmImportCsv.btn2Click(Sender: TObject);
 var
   i : Integer;
 begin
-  FIsImport             := False;
+  FIsPodeImportar             := False;
   tmrDispImport.Enabled := False;
 
   for I := 0 to FListaThrad.Count - 1 do
@@ -328,7 +328,7 @@ end;
 
 procedure TFrmImportCsv.btnImportClick(Sender: TObject);
 begin
-  FIsImport             := True;
+  FIsPodeImportar             := True;
   tmrDispImport.Enabled := True;
 end;
 
@@ -437,8 +437,8 @@ begin
 
   sqldtstArqImportados.Active := True;
   CdsArqImportados.Active := True;
-  FIsImport:= False;
-  FListaThrad := TObjectList.Create;
+  FIsPodeImportar:= False;
+  FListaThrad := TObjectList.Create(True);
 
 end;
 
@@ -586,17 +586,35 @@ var
   LSearchRec : TSearchRec;
 begin
 
+  sqldtstArqImportados.Refresh;
+  CdsArqImportados.Refresh;
+
   LIsTemImport := False;
   for I := 0 to FListaThrad.Count - 1 do
   begin
     if (FListaThrad.Count > 0) and Assigned(FListaThrad[i]) then
+    begin
       LIsTemImport := TThreadImportCsv(FListaThrad[i]).Started;
+
+      if (TThreadImportCsv(FListaThrad[i]).Terminado = True) then
+      begin
+        FListaThrad.Remove(FListaThrad[i]);
+      end;
+
+    end;
+
     if LIsTemImport then Break;
   end;
 
-  if FIsImport and not LIsTemImport then
+  if FListaThrad.Count = 0 then
   begin
-    FIsImport := False;
+    LIsTemImport    := False;
+    FIsPodeImportar := True;
+  end;
+
+  if FIsPodeImportar and not LIsTemImport then
+  begin
+    FIsPodeImportar := False;
     atualizaCaminhos;
     while (not sqlqryCaminhos.Eof) do
     begin
@@ -610,7 +628,7 @@ begin
           LThreadImport.Arquivo   := sqlqryCaminhos.FieldByName('caminho').AsString + '\' +  LSearchRec.Name;
           LThreadImport.TabDestino:= sqlqryCaminhos.FieldByName('tabela_destino').AsString;
           FListaThrad.Add(LThreadImport);
-          LThreadImport.Execute;
+          LThreadImport.Start;
           i := FindNext(LSearchRec);
         end;
       end;

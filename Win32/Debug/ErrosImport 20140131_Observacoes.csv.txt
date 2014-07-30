@@ -1,1 +1,0 @@
-Logando dados de importação para arquivo: D:\Dados_Portal_Transparencia\Servidores\Observacoes\20140131_Observacoes.csv
