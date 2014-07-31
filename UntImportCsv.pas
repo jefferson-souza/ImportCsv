@@ -7,7 +7,7 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Data.DBXOdbc, Data.FMTBcd, Data.DB,
   Vcl.Grids, Vcl.DBGrids, Data.SqlExpr, Datasnap.Provider, Datasnap.DBClient,
   Vcl.StdCtrls, Vcl.FileCtrl, Vcl.Buttons, Vcl.ComCtrls, Vcl.DBCtrls, Vcl.Mask,
-  Vcl.ExtCtrls, Contnrs;
+  Vcl.ExtCtrls, Contnrs, Vcl.Samples.Gauges;
 
 type
   TFrmImportCsv = class(TForm)
@@ -33,7 +33,6 @@ type
     dbnvgr1: TDBNavigator;
     dbedtcaminho: TDBEdit;
     dbcbbativado: TDBComboBox;
-    dbedttabela_destino: TDBEdit;
     intgrfldCdsArqImportid: TIntegerField;
     wdstrngfldCdsArqImportcaminho: TWideStringField;
     wdstrngfldCdsArqImportativado: TWideStringField;
@@ -64,6 +63,8 @@ type
     sqlqryCaminhosativado: TWideStringField;
     sqlqryCaminhostabela_destino: TWideStringField;
     txtQtdArqImportando: TStaticText;
+    dbcbbtabela_destino: TDBComboBox;
+    gauProgresso: TGauge;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormShow(Sender: TObject);
     procedure btnSalvarPathClick(Sender: TObject);
@@ -104,6 +105,7 @@ var
 begin
   FIsPodeImportar       := False;
   tmrDispImport.Enabled := False;
+  tmrDispImport.Interval:= 100;
 
   for I := 0 to FListaThrad.Count - 1 do
   begin
@@ -216,13 +218,16 @@ begin
   sqlqryIns.SQL.Clear;
 
   sqlqryIns.SQL.add(  'SELECT tablename FROM pg_catalog.pg_tables '
-                      +   'WHERE schemaname NOT IN ( "pg_catalog", "information_schema", "pg_toast") '
-                      +   ' ORDER BY tablename' );
+                      +   'WHERE schemaname NOT IN (     '
+                      +     QuotedStr('pg_catalog')         +' , '
+                      +     QuotedStr('information_schema') + ' , '
+                      +     QuotedStr('pg_toast')           + ' ) '
+                      +   ' ORDER BY tablename');
   sqlqryIns.Open;
   while not sqlqryIns.EOF do
   begin
-     //
-
+     dbcbbtabela_destino.Items.Add(sqlqryIns.FieldByName('tablename').AsString);
+     sqlqryIns.Next;
   end;
 end;
 
@@ -239,6 +244,7 @@ begin
   sqldtstArqImportados.Refresh;
   CdsArqImportados.Refresh;
   txtQtdArqImportando.Caption := IntToStr(FListaThrad.Count) + ' - Arquivos Sendo Importados';
+  tmrDispImport.Interval := 10000;
 
   LIsTemImport := False;
   for I := 0 to FListaThrad.Count - 1 do
@@ -250,6 +256,7 @@ begin
       if (TThreadImportCsv(FListaThrad[i]).Terminado = True) then
       begin
         FListaThrad.Remove(FListaThrad[i]);
+        gauProgresso.Progress := gauProgresso.Progress + 1;
       end;
 
     end;
@@ -261,6 +268,7 @@ begin
   begin
     LIsTemImport    := False;
     FIsPodeImportar := True;
+    gauProgresso.Progress := 0;
   end;
 
   if FIsPodeImportar and not LIsTemImport then
@@ -285,7 +293,7 @@ begin
       end;
       sqlqryCaminhos.Next;
     end;
-
+    gauProgresso.MaxValue := FListaThrad.Count;
   end;
 
 end;

@@ -82,7 +82,7 @@ begin
 
   while not Terminated do
   begin
-    sleep(50);
+    sleep(10);
     try
       try
         Application.ProcessMessages;

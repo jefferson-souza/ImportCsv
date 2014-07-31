@@ -16,6 +16,13 @@ object FrmImportCsv: TFrmImportCsv
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
+  object gauProgresso: TGauge
+    Left = 433
+    Top = 47
+    Width = 297
+    Height = 14
+    Progress = 0
+  end
   object txtTitulo: TStaticText
     Left = 22
     Top = 24
@@ -53,12 +60,11 @@ object FrmImportCsv: TFrmImportCsv
     Top = 61
     Width = 712
     Height = 428
-    ActivePage = tsArqImportados
+    ActivePage = ts3
     TabOrder = 3
     object ts3: TTabSheet
       Caption = 'Caminho dos Arquivos'
       ImageIndex = 2
-      ExplicitHeight = 273
       object lbl9: TLabel
         Left = 24
         Top = 16
@@ -156,9 +162,9 @@ object FrmImportCsv: TFrmImportCsv
           'F')
         TabOrder = 3
       end
-      object dbedttabela_destino: TDBEdit
+      object dbcbbtabela_destino: TDBComboBox
         Left = 543
-        Top = 32
+        Top = 35
         Width = 122
         Height = 21
         DataField = 'tabela_destino'
@@ -169,7 +175,6 @@ object FrmImportCsv: TFrmImportCsv
     object tsArqImportados: TTabSheet
       Caption = 'Arq. Importados'
       ImageIndex = 4
-      ExplicitHeight = 272
       object dbgrdArqImportados: TDBGrid
         Left = 24
         Top = 26
@@ -429,7 +434,7 @@ object FrmImportCsv: TFrmImportCsv
   end
   object tmrDispImport: TTimer
     Enabled = False
-    Interval = 10000
+    Interval = 100
     OnTimer = tmrDispImportTimer
     Left = 312
     Top = 72
