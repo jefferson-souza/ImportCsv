@@ -78,6 +78,7 @@ type
   private
     { Private declarations }
     FIsPodeImportar: Boolean;
+    FIsLimiteThread: Boolean;
   public
     { Public declarations }
 
@@ -86,6 +87,9 @@ type
 var
   FrmImportCsv: TFrmImportCsv;
   FListaThrad:   TObjectList;
+
+const
+  LimiteThread = 15;
 
 implementation
 
@@ -105,6 +109,7 @@ var
 begin
   FIsPodeImportar       := False;
   tmrDispImport.Enabled := False;
+  btnImport.Enabled     := True;
   tmrDispImport.Interval:= 100;
 
   for I := 0 to FListaThrad.Count - 1 do
@@ -119,6 +124,7 @@ end;
 
 procedure TFrmImportCsv.btnImportClick(Sender: TObject);
 begin
+  btnImport.Enabled     := False;
   FIsPodeImportar       := True;
   tmrDispImport.Enabled := True;
   txtQtdArqImportando.Caption := 'Prepearando Importação';
@@ -213,6 +219,7 @@ begin
   FIsPodeImportar:= False;
   FListaThrad := TObjectList.Create(True);
   txtQtdArqImportando.Caption := '0 - Arquivos Sendo Importados';
+  FIsLimiteThread := False;
 
   sqlqryIns.close;
   sqlqryIns.SQL.Clear;
@@ -247,21 +254,28 @@ begin
   tmrDispImport.Interval := 10000;
 
   LIsTemImport := False;
-  for I := 0 to FListaThrad.Count - 1 do
-  begin
-    if (FListaThrad.Count > 0) and Assigned(FListaThrad[i]) then
+  try
+    for I := 0 to FListaThrad.Count - 1 do
     begin
-      LIsTemImport := TThreadImportCsv(FListaThrad[i]).Started;
-
-      if (TThreadImportCsv(FListaThrad[i]).Terminado = True) then
+      if (FListaThrad.Count > 0) and Assigned(FListaThrad[i]) then
       begin
-        FListaThrad.Remove(FListaThrad[i]);
-        gauProgresso.Progress := gauProgresso.Progress + 1;
-      end;
+        LIsTemImport := TThreadImportCsv(FListaThrad[i]).Started;
 
+        if (TThreadImportCsv(FListaThrad[i]).Terminado = True) then
+        begin
+          FListaThrad.Remove(FListaThrad[i]);
+          gauProgresso.Progress := gauProgresso.Progress + 1;
+          Refresh;
+        end;
+
+      end;
+    end;
+  except
+    on E: Exception do
+    begin
+      LIsTemImport := True;
     end;
 
-    if LIsTemImport then Break;
   end;
 
   if FListaThrad.Count = 0 then
@@ -269,9 +283,10 @@ begin
     LIsTemImport    := False;
     FIsPodeImportar := True;
     gauProgresso.Progress := 0;
+    FIsLimiteThread := False;
   end;
 
-  if FIsPodeImportar and not LIsTemImport then
+  if FIsPodeImportar and not LIsTemImport and not FIsLimiteThread then
   begin
     FIsPodeImportar := False;
     atualizaCaminhos;
@@ -289,9 +304,17 @@ begin
           FListaThrad.Add(LThreadImport);
           LThreadImport.Start;
           i := FindNext(LSearchRec);
+          if LimiteThread = FListaThrad.Count then
+            FIsLimiteThread := True;
+
+          if FIsLimiteThread then
+            Break;
         end;
       end;
       sqlqryCaminhos.Next;
+
+      if FIsLimiteThread then
+        Break;
     end;
     gauProgresso.MaxValue := FListaThrad.Count;
   end;
